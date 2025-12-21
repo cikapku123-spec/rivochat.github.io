@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Rivo Chat V18 - Hybrid Login</title>
+    <title>Rivo Chat V18 - Fixed</title>
     
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -20,7 +20,6 @@
             --border: #e2e8f0;        
             --text-dark: #0f172a;
             --text-med: #64748b;
-
             --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
             --shadow-float: 0 10px 30px -10px rgba(37, 99, 235, 0.3);
         }
@@ -33,7 +32,7 @@
         /* --- 2. LAYOUT --- */
         #app-container { display: none; width: 100%; height: 100%; }
 
-        /* NAVIGASI (KIRI) */
+        /* NAVIGASI (KIRI - PC) */
         #nav-rail { width: 88px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; padding: 30px 0; z-index: 20; }
         .nav-btn { width: 56px; height: 56px; border-radius: 18px; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; font-size: 28px; color: #94a3b8; cursor: pointer; transition: 0.3s; }
         .nav-btn:hover { background: var(--primary-bg); color: var(--primary); transform: translateY(-3px); }
@@ -60,68 +59,100 @@
         #chat-panel { flex: 1; background: var(--bg-main); display: flex; flex-direction: column; position: relative; }
         #active-chat { height: 100%; display: flex; flex-direction: column; }
         
-        .chat-head { height: 80px; padding: 0 24px; display: flex; align-items: center; gap: 15px; background: rgba(255,255,255,0.85); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); flex-shrink: 0; cursor: pointer; }
+        .chat-head { height: 80px; padding: 0 24px; display: flex; align-items: center; gap: 15px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; cursor: pointer; z-index: 10; }
         .back-btn { display: none; font-size: 28px; cursor: pointer; color: var(--text-dark); }
         
         .msgs-area { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 10px; }
-        .bubble { max-width: 70%; padding: 12px 18px; border-radius: 20px; font-size: 15px; position: relative; box-shadow: var(--shadow-sm); line-height: 1.5; }
+        .bubble { max-width: 70%; padding: 12px 18px; border-radius: 20px; font-size: 15px; position: relative; box-shadow: var(--shadow-sm); line-height: 1.5; word-wrap: break-word; }
         .me { align-self: flex-end; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border-bottom-right-radius: 4px; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.2); }
         .other { align-self: flex-start; background: white; color: var(--text-dark); border-bottom-left-radius: 4px; }
         .bubble-name { font-size: 11px; font-weight: 700; color: var(--primary); margin-bottom: 4px; display: block; }
 
-        .input-bar { padding: 20px 24px; background: rgba(255,255,255,0.85); backdrop-filter: blur(10px); border-top: 1px solid var(--border); display: flex; gap: 12px; align-items: center; }
+        /* PERBAIKAN INPUT BAR DI SINI */
+        .input-bar { 
+            padding: 15px 24px; 
+            background: var(--surface); /* Solid White, bukan transparan */
+            border-top: 1px solid var(--border); 
+            display: flex; 
+            gap: 12px; 
+            align-items: center;
+            flex-shrink: 0; /* Mencegah input bar mengecil */
+            position: relative;
+            z-index: 20;
+        }
         .inp-chat { flex: 1; padding: 14px 20px; border-radius: 99px; background: var(--bg-main); border: 2px solid transparent; outline: none; font-size: 15px; transition: 0.3s; }
         .inp-chat:focus { background: white; border-color: var(--primary-light); }
         .btn-send { width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 22px; box-shadow: var(--shadow-float); }
 
-        /* PROFILE VIEW STYLES */
+        /* PROFILE VIEW */
         .profile-card { text-align: center; padding: 30px; }
         .profile-pic-big { width: 120px; height: 120px; margin: 0 auto 20px; border-radius: 50%; border: 4px solid white; box-shadow: var(--shadow-float); overflow: hidden; position: relative; cursor: pointer; background: var(--primary-light); display: flex; align-items: center; justify-content: center; font-size: 50px; color: var(--primary); }
         .edit-overlay { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.5); color: white; font-size: 10px; padding: 5px; text-align: center; display: none; }
         .profile-pic-big:hover .edit-overlay { display: block; }
-
-        /* RESPONSIVE */
-        @media (max-width: 800px) {
-            #nav-rail { display: none; }
-            #list-panel { width: 100%; border-right: none; }
-            #mobile-nav { display: flex; height: 70px; position: fixed; bottom: 0; width: 100%; background: var(--surface); border-top: 1px solid var(--border); z-index: 50; justify-content: space-around; align-items: center; padding-bottom: 10px; }
-            .mob-item { display: flex; flex-direction: column; align-items: center; color: #94a3b8; font-size: 10px; font-weight: 600; padding: 5px 15px; border-radius: 12px; }
-            .mob-item.active { color: var(--primary); background: var(--primary-bg); }
-            #chat-panel { position: fixed; inset: 0; transform: translateX(100%); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 60; background: var(--bg-main); }
-            #chat-panel.show { transform: translateX(0); }
-            .back-btn { display: block; }
-        }
-        #mobile-nav { display: none; }
 
         /* MODALS */
         .modal-bg { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(8px); z-index: 200; display: flex; align-items: center; justify-content: center; }
         .modal { background: var(--surface); width: 90%; max-width: 380px; border-radius: 24px; padding: 30px; display: flex; flex-direction: column; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.2); }
         .inp-log { width: 100%; padding: 14px 20px; border: 2px solid var(--border); border-radius: 16px; margin-bottom: 15px; font-size: 15px; outline: none; background: var(--bg-main); }
         .btn-primary { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border: none; border-radius: 16px; font-weight: 700; cursor: pointer; font-size: 15px; box-shadow: var(--shadow-float); }
-        
-        /* TOMBOL GOOGLE LOGIN */
         .btn-google { width: 100%; padding: 14px; background: white; border: 2px solid var(--border); border-radius: 16px; font-weight: 700; color: var(--text-dark); display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; margin-bottom: 20px; transition: 0.2s; font-size: 15px; }
-        .btn-google:hover { background: #f9fafb; border-color: #cbd5e1; }
-
         .member-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+
+        /* --- MOBILE RESPONSIVE FIX --- */
+        #mobile-nav { display: none; }
+
+        @media (max-width: 800px) {
+            #nav-rail { display: none; } 
+            #list-panel { width: 100%; border-right: none; height: calc(100vh - 70px); }
+            
+            /* NAV BAWAH */
+            #mobile-nav { 
+                display: flex; 
+                height: 70px; 
+                position: fixed; 
+                bottom: 0; 
+                left: 0;
+                width: 100%; 
+                background: var(--surface); 
+                border-top: 1px solid var(--border); 
+                z-index: 50; 
+                justify-content: space-around; 
+                align-items: center; 
+                padding-bottom: 5px;
+            }
+            .mob-item { display: flex; flex-direction: column; align-items: center; color: #94a3b8; font-size: 10px; font-weight: 600; padding: 5px 15px; border-radius: 12px; }
+            .mob-item.active { color: var(--primary); background: var(--primary-bg); }
+            .mob-item i { font-size: 24px; margin-bottom: 4px; }
+
+            /* CHAT PANEL FULL SCREEN (FIXED) */
+            #chat-panel { 
+                position: fixed; 
+                inset: 0; 
+                transform: translateX(100%); 
+                transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+                z-index: 100; /* Di atas Nav Bawah */
+                background: var(--bg-main);
+                padding-bottom: 0; /* Reset padding */
+                height: 100%; /* Full height */
+            }
+            #chat-panel.show { transform: translateX(0); }
+            .back-btn { display: block; }
+            #empty-state { display: none; }
+        }
     </style>
 </head>
 <body>
 
     <div id="overlay-login" class="modal-bg">
         <div class="modal" style="text-align: center;">
-            <h2 style="margin:0 0 5px; font-weight:800; color:var(--primary);">Rivo Chat</h2>
+            <h2 style="margin:0 0 5px; font-weight:800; color:var(--primary);">Rivo Chat V18</h2>
             <p style="color:var(--text-med); margin-bottom:25px;">Pilih cara masuk:</p>
-            
             <button class="btn-google" onclick="app.loginGoogle()">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="22">
-                Masuk dengan Google
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="22"> Masuk dengan Google
             </button>
-
             <div style="display:flex;align-items:center;color:var(--text-med);font-size:12px;margin-bottom:20px;gap:10px;">
                 <div style="flex:1;height:1px;background:var(--border)"></div>ATAU<div style="flex:1;height:1px;background:var(--border)"></div>
             </div>
-            
             <input id="username-inp" class="inp-log" placeholder="Buat Username (Tanpa spasi)...">
             <button class="btn-primary" onclick="app.loginManual()">Masuk dengan Username</button>
         </div>
@@ -139,23 +170,19 @@
         </div>
 
         <div id="list-panel">
-            
             <div id="view-chats" class="flex-col" style="height:100%; display:flex; flex-direction:column;">
                 <div class="panel-head">Pesan</div>
                 <div class="search-box"><input id="search-chat" class="inp-search" placeholder="Cari teman..." onkeypress="if(event.key==='Enter') app.searchUser()"></div>
                 <div id="list-chats" class="scroll-y" style="padding:0 12px;"></div>
             </div>
-
             <div id="view-groups" class="hidden" style="height:100%; display:flex; flex-direction:column;">
                 <div class="panel-head">Grup <div class="add-btn" onclick="app.openCreateModal('group')"><i class='bx bx-plus'></i></div></div>
                 <div id="list-groups" class="scroll-y" style="padding:0 12px;"></div>
             </div>
-
             <div id="view-channels" class="hidden" style="height:100%; display:flex; flex-direction:column;">
                 <div class="panel-head">Saluran <div class="add-btn" onclick="app.openCreateModal('channel')"><i class='bx bx-plus'></i></div></div>
                 <div id="list-channels" class="scroll-y" style="padding:0 12px;"></div>
             </div>
-
             <div id="view-profile" class="hidden" style="height:100%; display:flex; flex-direction:column;">
                 <div class="panel-head">Profil Saya</div>
                 <div class="profile-card">
@@ -255,30 +282,26 @@
         window.app = {
             user: null, chatId: null, isGrp: false, createType: 'group',
 
-            // --- 1. HYBRID LOGIN ---
             loginManual: () => {
                 const u = document.getElementById('username-inp').value.trim().toLowerCase().replace(/\s/g, '');
                 if(!u) return alert("Isi username!");
-                // Login pakai Username (Manual)
                 app.processLogin(u, u, null); 
             },
             loginGoogle: () => {
                 signInWithPopup(auth, provider).then(res => {
-                    // Login pakai Email Google (Otomatis)
                     app.processLogin(res.user.email, res.user.displayName, res.user.photoURL);
                 }).catch(e => alert(e.message));
             },
             processLogin: async (id, name, pic) => {
-                app.user = id; // ID bisa berupa email atau username
-                localStorage.setItem('rivo_v18_user', app.user);
-                
+                app.user = id; localStorage.setItem('rivo_v18_user', app.user);
                 const ref = doc(db, "users", app.user);
                 const snap = await getDoc(ref);
                 if(!snap.exists()) {
-                    await setDoc(ref, { 
-                        email: id, name: name || id, avatar: pic, chats: [], groups: [] 
-                    });
+                    await setDoc(ref, { email: id, name: name || id, avatar: pic, chats: [], groups: [] });
                 }
+                app.init();
+            },
+            init: () => {
                 document.getElementById('overlay-login').classList.add('hidden');
                 document.getElementById('app-container').style.display = 'flex';
                 app.tab('chats', document.querySelector('.nav-btn'));
@@ -286,7 +309,6 @@
             },
             logout: () => { localStorage.removeItem('rivo_v18_user'); location.reload(); },
 
-            // --- 2. NAV ---
             tab: (t, el) => {
                 document.querySelectorAll('.nav-btn, .mob-item').forEach(x => x.classList.remove('active'));
                 if(el) {
@@ -298,13 +320,9 @@
                 }
                 ['view-chats','view-groups','view-channels','view-profile'].forEach(id => document.getElementById(id).classList.add('hidden'));
                 document.getElementById('view-'+t).classList.remove('hidden');
-
-                if(t==='chats') app.listenChats();
-                else if(t==='profile') app.loadMyProfile();
-                else app.listenGroups(t);
+                if(t==='chats') app.listenChats(); else if(t==='profile') app.loadMyProfile(); else app.listenGroups(t);
             },
 
-            // --- 3. LISTS ---
             listenChats: () => {
                 onSnapshot(doc(db, "users", app.user), (d) => {
                     const list = document.getElementById('list-chats'); list.innerHTML="";
@@ -339,7 +357,6 @@
                 d.onclick = onClick; cont.appendChild(d);
             },
 
-            // --- 4. CHAT ---
             searchUser: async () => {
                 const t = document.getElementById('search-chat').value.trim().toLowerCase();
                 if(t===app.user) return;
@@ -349,7 +366,7 @@
                     await updateDoc(doc(db, "users", app.user), { chats: arrayUnion({id:t, chatId:cid}) });
                     await updateDoc(doc(db, "users", t), { chats: arrayUnion({id:app.user, chatId:cid}) });
                     app.openChat(cid, t, false); document.getElementById('search-chat').value="";
-                } else alert("User tidak ditemukan (Coba masukkan username/email yang pas)");
+                } else alert("User tidak ditemukan");
             },
             openChat: async (cid, tid, isGrp) => {
                 app.chatId = cid; app.isGrp = isGrp;
@@ -398,7 +415,17 @@
                 }}
             },
 
-            // --- 5. MANAGEMENT & PROFILE ---
+            loadMyProfile: async () => {
+                const d = (await getDoc(doc(db, "users", app.user))).data();
+                document.getElementById('my-name-disp').innerText = d.name;
+                document.getElementById('my-user-disp').innerText = d.email;
+                document.getElementById('my-ava-big').innerHTML = d.avatar ? `<img src="${d.avatar}" style="width:100%;height:100%;object-fit:cover">` : `<i class='bx bxs-user'></i>`;
+            },
+            uploadUser: (i) => {
+                if(i.files[0]) { const r=new FileReader(); r.readAsDataURL(i.files[0]); r.onload=async(e)=>{
+                    await updateDoc(doc(db,"users",app.user), {avatar:e.target.result}); app.loadMyProfile();
+                }}
+            },
             openCreateModal: (type) => {
                 app.createType = type;
                 document.getElementById('create-title').innerHTML = `Buat ${type==='group'?'Grup':'Saluran'} <span style="float:right;cursor:pointer" onclick="app.modal('create',false)">&times;</span>`;
@@ -454,22 +481,10 @@
                     app.openChat(app.chatId, app.chatId, true);
                 }}
             },
-            // PROFILE USER
-            loadMyProfile: async () => {
-                const d = (await getDoc(doc(db, "users", app.user))).data();
-                document.getElementById('my-name-disp').innerText = d.name;
-                document.getElementById('my-user-disp').innerText = d.email;
-                document.getElementById('my-ava-big').innerHTML = d.avatar ? `<img src="${d.avatar}" style="width:100%;height:100%;object-fit:cover">` : `<i class='bx bxs-user'></i>`;
-            },
-            uploadUser: (i) => {
-                if(i.files[0]) { const r=new FileReader(); r.readAsDataURL(i.files[0]); r.onload=async(e)=>{
-                    await updateDoc(doc(db,"users",app.user), {avatar:e.target.result}); app.loadMyProfile();
-                }}
-            },
             modal: (id, show) => document.getElementById('modal-'+id).classList[show?'remove':'add']('hidden')
         };
 
-        const saved = localStorage.getItem('rivo_v18_user'); if(saved) { app.user = saved; document.getElementById('overlay-login').classList.add('hidden'); document.getElementById('app-container').style.display='flex'; app.tab('chats', document.querySelector('.nav-btn')); app.loadMyProfile(); }
+        const saved = localStorage.getItem('rivo_v18_user'); if(saved) { app.user = saved; app.init(); }
     </script>
 </body>
 </html>
