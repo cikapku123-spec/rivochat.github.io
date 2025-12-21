@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Rivo Chat - Google Login</title>
+    
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- DESIGN SYSTEM --- */
+        :root {
+            --primary: #2563eb;
+            --bg-body: #f8fafc;
+            --white: #ffffff;
+            --nav-w: 80px;
+            --list-w: 360px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg-body); height: 100vh; overflow: hidden; display: flex; color: #0f172a; }
+        .hidden { display: none !important; }
+        .scroll-y { overflow-y: auto; }
+
+        /* --- LOGIN (Google Style) --- */
+        #login-overlay { position: fixed; inset: 0; z-index: 999; background: #0f172a; display: flex; align-items: center; justify-content: center; }
+        .login-card { background: white; padding: 40px; border-radius: 24px; width: 90%; max-width: 400px; text-align: center; }
+        
+        .btn-google {
+            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 12px; 
+            background: white; color: #333; font-weight: 600; cursor: pointer; 
+            display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px;
+            transition: 0.2s; font-size: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .btn-google:hover { background: #f1f5f9; border-color: #ccc; }
+        
+        .divider { display: flex; align-items: center; color: #999; font-size: 12px; margin: 20px 0; }
+        .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: #eee; }
+        .divider span { padding: 0 10px; }
+
+        .inp-log { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 12px; margin-bottom: 10px; }
+        .btn-log { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
+
+        /* --- APP LAYOUT --- */
+        #app { display: none; width: 100%; height: 100%; }
+        
+        #nav-rail { width: var(--nav-w); background: white; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center; padding: 20px 0; }
+        .nav-btn { width: 48px; height: 48px; border-radius: 14px; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #64748b; cursor: pointer; transition: 0.2s; }
+        .nav-btn.active { background: var(--primary); color: white; }
+
+        #list-panel { width: var(--list-w); background: white; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; }
+        .panel-head { height: 70px; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; font-weight: 700; border-bottom: 1px solid #e2e8f0; }
+        
+        .list-item { padding: 12px 20px; display: flex; align-items: center; cursor: pointer; transition: 0.2s; }
+        .list-item:hover { background: #f8fafc; }
+        .avatar { width: 45px; height: 45px; border-radius: 50%; background: #e2e8f0; margin-right: 15px; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 20px; color: white; flex-shrink: 0; }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+        #chat-room { flex: 1; background: #ffffff; display: flex; flex-direction: column; position: relative; }
+        #empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #94a3b8; }
+        #active-chat { display: flex; flex-direction: column; height: 100%; }
+        
+        .chat-head { height: 70px; border-bottom: 1px solid #e2e8f0; padding: 0 20px; display: flex; align-items: center; gap: 15px; }
+        .back-btn { display: none; font-size: 24px; cursor: pointer; }
+        .msgs-area { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; background: #f8fafc; }
+        .bubble { max-width: 70%; padding: 10px 15px; border-radius: 15px; font-size: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .me { align-self: flex-end; background: var(--primary); color: white; border-bottom-right-radius: 2px; }
+        .other { align-self: flex-start; background: white; border: 1px solid #e2e8f0; border-bottom-left-radius: 2px; }
+        
+        .input-bar { padding: 15px; background: white; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; }
+        .inp-chat { flex: 1; padding: 12px 20px; border-radius: 24px; background: #f1f5f9; border: none; outline: none; }
+        
+        /* RESPONSIVE */
+        @media (max-width: 800px) {
+            #nav-rail { position: fixed; bottom: 0; left: 0; width: 100%; height: 60px; flex-direction: row; justify-content: space-around; padding: 0; border-top: 1px solid #ddd; z-index: 50; }
+            #list-panel { width: 100%; height: calc(100% - 60px); }
+            #chat-room { position: fixed; inset: 0; transform: translateX(100%); transition: 0.3s; z-index: 60; }
+            #chat-room.show { transform: translateX(0); }
+            .back-btn { display: block; }
+        }
+
+        /* MODAL */
+        .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: flex; align-items: center; justify-content: center; }
+        .modal-box { background: white; width: 90%; max-width: 350px; padding: 20px; border-radius: 20px; }
+    </style>
+</head>
+<body>
+
+    <div id="login-overlay">
+        <div class="login-card">
+            <h2 style="margin-bottom: 5px;">Rivo Chat</h2>
+            <p style="color:#666; margin-bottom: 30px;">Masuk dengan Akun Google</p>
+            
+            <button class="btn-google" onclick="app.loginGoogle()">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
+                Masuk dengan Google
+            </button>
+
+            <div class="divider"><span>ATAU MANUAL</span></div>
+
+            <input type="email" id="email" class="inp-log" placeholder="Email...">
+            <button class="btn-log" onclick="app.loginEmail()">Masuk Manual</button>
+        </div>
+    </div>
+
+    <div id="app">
+        <nav id="nav-rail">
+            <div class="nav-btn active" onclick="app.tab('chats', this)"><i class='bx bxs-message-rounded-dots'></i></div>
+            <div class="nav-btn" onclick="app.tab('community', this)"><i class='bx bxs-planet'></i></div>
+            <div class="nav-btn" onclick="app.tab('profile', this)"><i class='bx bxs-user-circle'></i></div>
+            <div style="flex:1"></div>
+            <div class="nav-btn" onclick="app.logout()" style="color:#ef4444"><i class='bx bx-power-off'></i></div>
+        </nav>
+
+        <div id="list-panel">
+            <div id="view-chats" class="flex-col full-h">
+                <div class="panel-head">
+                    <span>Pesan</span>
+                    <i class='bx bxs-edit' style="cursor:pointer; color:var(--primary)" onclick="app.openModal('create-group')"></i>
+                </div>
+                <div style="padding:15px"><input id="search-chat" class="inp-log" style="margin:0; background:#f1f5f9;" placeholder="Cari teman..." onkeypress="if(event.key==='Enter') app.searchUser()"></div>
+                <div id="list-chats" class="scroll-y" style="flex:1;"></div>
+            </div>
+            
+            <div id="view-community" class="flex-col full-h hidden">
+                <div class="panel-head">Komunitas <i class='bx bx-plus' style="cursor:pointer" onclick="app.openModal('create-channel')"></i></div>
+                <div style="padding:15px"><button class="btn-google" style="margin:0" onclick="app.openModal('explore')">🔍 Cari Saluran</button></div>
+                <div id="list-community" class="scroll-y" style="flex:1;"></div>
+            </div>
+
+            <div id="view-profile" class="flex-col full-h hidden">
+                <div class="panel-head">Profil</div>
+                <div style="padding:30px; text-align:center;">
+                    <img id="my-ava" style="width:100px; height:100px; border-radius:50%; object-fit:cover; margin-bottom:10px; background:#ddd;">
+                    <h3 id="my-name-disp">User</h3>
+                    <p id="my-email-disp" style="color:#999; font-size:13px; margin-bottom:20px;">email</p>
+                    <button class="btn-log" onclick="app.logout()">Keluar</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="chat-room">
+            <div id="empty-state">
+                <i class='bx bxs-chat' style="font-size: 80px; opacity:0.2;"></i>
+                <p>Pilih chat untuk memulai</p>
+            </div>
+            <div id="active-chat" class="hidden">
+                <div class="chat-head">
+                    <i class='bx bx-arrow-back back-btn' onclick="app.closeChat()"></i>
+                    <img id="head-ava" style="width:40px; height:40px; border-radius:50%; background:#ddd; object-fit:cover;">
+                    <div style="font-weight:bold; margin-left:10px;" id="head-name">Nama</div>
+                </div>
+                <div class="msgs-area" id="msgs-area"></div>
+                <div class="input-bar">
+                    <input id="msg-in" class="inp-chat" placeholder="Tulis pesan..." onkeypress="if(event.key==='Enter') app.send()">
+                    <button onclick="app.send()" style="border:none; background:none; font-size:24px; color:var(--primary); cursor:pointer;"><i class='bx bxs-send'></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-create-group" class="modal-bg hidden">
+        <div class="modal-box">
+            <h3>Buat Grup <span style="float:right;cursor:pointer" onclick="app.closeModal('create-group')">&times;</span></h3>
+            <input id="g-name" class="inp-log" placeholder="Nama Grup">
+            <button class="btn-log" onclick="app.createGroup('group')">Buat</button>
+        </div>
+    </div>
+    
+    <div id="modal-create-channel" class="modal-bg hidden">
+        <div class="modal-box">
+            <h3>Buat Saluran <span style="float:right;cursor:pointer" onclick="app.closeModal('create-channel')">&times;</span></h3>
+            <input id="c-name" class="inp-log" placeholder="Nama Saluran">
+            <button class="btn-log" onclick="app.createGroup('channel')">Buat</button>
+        </div>
+    </div>
+
+    <div id="modal-explore" class="modal-bg hidden">
+        <div class="modal-box">
+            <h3>Cari Saluran <span style="float:right;cursor:pointer" onclick="app.closeModal('explore')">&times;</span></h3>
+            <div id="explore-list" class="scroll-y" style="max-height:200px; margin-top:10px;"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, onSnapshot, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+        // CONFIG SUDAH SAYA MASUKKAN SESUAI GAMBAR KAMU:
+        const firebaseConfig = {
+            apiKey: "AIzaSyC70M2KvsPNjF7yG14FQWB052g5pW-mP7E",
+            authDomain: "chat-rivo.firebaseapp.com",
+            projectId: "chat-rivo",
+            storageBucket: "chat-rivo.firebasestorage.app",
+            messagingSenderId: "1089721856706",
+            appId: "1:1089721856706:web:235f8070bde6becaca815b",
+            measurementId: "G-B36Q39C3E0"
+        };
+
+        const fApp = initializeApp(firebaseConfig);
+        const auth = getAuth(fApp);
+        const db = getFirestore(fApp);
+        const provider = new GoogleAuthProvider();
+
+        window.app = {
+            user: null, chatId: null, isGrp: false,
+
+            // 1. LOGIN GOOGLE (LOGIC UTAMA)
+            loginGoogle: () => {
+                signInWithPopup(auth, provider).then(async (result) => {
+                    // Berhasil Login Google
+                    // Otomatis user akan terdeteksi di 'onAuthStateChanged'
+                }).catch((error) => {
+                    alert("Login Gagal: " + error.message);
+                });
+            },
+
+            // Login Manual (Email Saja - Backup)
+            loginEmail: async () => {
+                const e = document.getElementById('email').value.trim().toLowerCase();
+                if(!e) return;
+                // Simpan user manual sebagai 'dummy' auth
+                app.handleUserLogin({ email: e, displayName: e.split('@')[0], photoURL: null });
+            },
+
+            // Fungsi Penanganan User Login
+            handleUserLogin: async (u) => {
+                app.user = u.email;
+                localStorage.setItem('rivo_plat_user', u.email);
+                
+                // Simpan data ke Database
+                const ref = doc(db, "users", u.email);
+                await setDoc(ref, { 
+                    email: u.email, 
+                    name: u.displayName || u.email.split('@')[0], 
+                    avatar: u.photoURL,
+                    bio: "Menggunakan Rivo Chat",
+                    // Jangan timpa chats/groups jika sudah ada
+                }, { merge: true });
+
+                // Tampilkan App
+                document.getElementById('login-overlay').classList.add('hidden');
+                document.getElementById('app').style.display = 'flex';
+                app.tab('chats', document.querySelector('.nav-btn'));
+            },
+
+            logout: () => {
+                signOut(auth).then(() => {
+                    localStorage.removeItem('rivo_plat_user');
+                    location.reload();
+                });
+            },
+
+            // 2. NAVIGASI
+            tab: (t, el) => {
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                if(el) el.classList.add('active');
+                ['view-chats','view-community','view-profile'].forEach(id => document.getElementById(id).classList.add('hidden'));
+                document.getElementById('view-'+t).classList.remove('hidden');
+
+                if(t==='chats') app.listenChats();
+                if(t==='community') app.listenCommunities();
+                if(t==='profile') app.loadProfile();
+            },
+
+            // 3. LISTENERS
+            listenChats: () => {
+                onSnapshot(doc(db, "users", app.user), (d) => {
+                    const list = document.getElementById('list-chats'); list.innerHTML="";
+                    const data = d.data();
+                    if(data && data.chats) data.chats.forEach(async c => {
+                        const p = (await getDoc(doc(db, "users", c.id))).data();
+                        if(p) app.renderItem(list, p.name, p.bio, p.avatar, () => app.openChat(c.chatId, c.id, false));
+                    });
+                    if(data && data.groups) data.groups.forEach(async g => {
+                        const gd = (await getDoc(doc(db, "groups", g.id))).data();
+                        if(gd && gd.type === 'group') app.renderItem(list, gd.name, "Grup", gd.avatar, () =>
