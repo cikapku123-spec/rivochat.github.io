@@ -3,488 +3,849 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Rivo Chat V18 - Fixed</title>
+    <title>Apple Music Replica - Glassmorphism Customizer</title>
+    <!-- Lucide Icons untuk ikon premium -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Library untuk menyuntikkan gambar & judul langsung ke dalam file MP3 -->
+    <script src="https://cdn.jsdelivr.net/npm/browser-id3-writer@4.4.0/dist/browser-id3-writer.min.js"></script>
     
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
     <style>
-        /* --- 1. MODERN BLUE THEME --- */
         :root {
-            --primary: #2563eb;       
-            --primary-dark: #1d4ed8;  
-            --primary-light: #dbeafe; 
-            --primary-bg: #eff6ff;    
-            --bg-main: #f8fafc;       
-            --surface: #ffffff;       
-            --border: #e2e8f0;        
-            --text-dark: #0f172a;
-            --text-med: #64748b;
-            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
-            --shadow-float: 0 10px 30px -10px rgba(37, 99, 235, 0.3);
-        }
-
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg-main); height: 100vh; overflow: hidden; display: flex; color: var(--text-dark); margin: 0; }
-        .hidden { display: none !important; }
-        .scroll-y { overflow-y: auto; flex: 1; min-height: 0; scrollbar-width: thin; }
-        
-        /* --- 2. LAYOUT --- */
-        #app-container { display: none; width: 100%; height: 100%; }
-
-        /* NAVIGASI (KIRI - PC) */
-        #nav-rail { width: 88px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; padding: 30px 0; z-index: 20; }
-        .nav-btn { width: 56px; height: 56px; border-radius: 18px; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; font-size: 28px; color: #94a3b8; cursor: pointer; transition: 0.3s; }
-        .nav-btn:hover { background: var(--primary-bg); color: var(--primary); transform: translateY(-3px); }
-        .nav-btn.active { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; box-shadow: var(--shadow-float); }
-
-        /* LIST PANEL (TENGAH) */
-        #list-panel { width: 380px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
-        .panel-head { height: 80px; padding: 0 24px; display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 20px; flex-shrink: 0; letter-spacing: -0.5px; }
-        .add-btn { width: 36px; height: 36px; background: var(--primary-bg); color: var(--primary); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; transition: 0.2s; }
-        
-        .search-box { padding: 0 24px 20px; }
-        .inp-search { width: 100%; padding: 14px 20px; background: var(--bg-main); border: 2px solid transparent; border-radius: 16px; font-size: 14px; font-weight: 500; transition: 0.3s; }
-        .inp-search:focus { background: white; border-color: var(--primary-light); box-shadow: var(--shadow-sm); }
-
-        .list-item { padding: 14px 20px; display: flex; align-items: center; cursor: pointer; transition: 0.2s; margin: 4px 12px; border-radius: 16px; }
-        .list-item:hover { background: var(--bg-main); }
-        .avatar { width: 52px; height: 52px; border-radius: 18px; background: var(--primary-light); margin-right: 15px; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 24px; color: var(--primary); flex-shrink: 0; font-weight: 700; position: relative; }
-        .avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .item-info { flex: 1; overflow: hidden; }
-        .item-name { font-weight: 700; font-size: 15px; margin-bottom: 2px; }
-        .item-sub { font-size: 13px; color: var(--text-med); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        
-        /* CHAT PANEL (KANAN) */
-        #chat-panel { flex: 1; background: var(--bg-main); display: flex; flex-direction: column; position: relative; }
-        #active-chat { height: 100%; display: flex; flex-direction: column; }
-        
-        .chat-head { height: 80px; padding: 0 24px; display: flex; align-items: center; gap: 15px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; cursor: pointer; z-index: 10; }
-        .back-btn { display: none; font-size: 28px; cursor: pointer; color: var(--text-dark); }
-        
-        .msgs-area { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 10px; }
-        .bubble { max-width: 70%; padding: 12px 18px; border-radius: 20px; font-size: 15px; position: relative; box-shadow: var(--shadow-sm); line-height: 1.5; word-wrap: break-word; }
-        .me { align-self: flex-end; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border-bottom-right-radius: 4px; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.2); }
-        .other { align-self: flex-start; background: white; color: var(--text-dark); border-bottom-left-radius: 4px; }
-        .bubble-name { font-size: 11px; font-weight: 700; color: var(--primary); margin-bottom: 4px; display: block; }
-
-        /* PERBAIKAN INPUT BAR DI SINI */
-        .input-bar { 
-            padding: 15px 24px; 
-            background: var(--surface); /* Solid White, bukan transparan */
-            border-top: 1px solid var(--border); 
-            display: flex; 
-            gap: 12px; 
-            align-items: center;
-            flex-shrink: 0; /* Mencegah input bar mengecil */
-            position: relative;
-            z-index: 20;
-        }
-        .inp-chat { flex: 1; padding: 14px 20px; border-radius: 99px; background: var(--bg-main); border: 2px solid transparent; outline: none; font-size: 15px; transition: 0.3s; }
-        .inp-chat:focus { background: white; border-color: var(--primary-light); }
-        .btn-send { width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 22px; box-shadow: var(--shadow-float); }
-
-        /* PROFILE VIEW */
-        .profile-card { text-align: center; padding: 30px; }
-        .profile-pic-big { width: 120px; height: 120px; margin: 0 auto 20px; border-radius: 50%; border: 4px solid white; box-shadow: var(--shadow-float); overflow: hidden; position: relative; cursor: pointer; background: var(--primary-light); display: flex; align-items: center; justify-content: center; font-size: 50px; color: var(--primary); }
-        .edit-overlay { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.5); color: white; font-size: 10px; padding: 5px; text-align: center; display: none; }
-        .profile-pic-big:hover .edit-overlay { display: block; }
-
-        /* MODALS */
-        .modal-bg { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(8px); z-index: 200; display: flex; align-items: center; justify-content: center; }
-        .modal { background: var(--surface); width: 90%; max-width: 380px; border-radius: 24px; padding: 30px; display: flex; flex-direction: column; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.2); }
-        .inp-log { width: 100%; padding: 14px 20px; border: 2px solid var(--border); border-radius: 16px; margin-bottom: 15px; font-size: 15px; outline: none; background: var(--bg-main); }
-        .btn-primary { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border: none; border-radius: 16px; font-weight: 700; cursor: pointer; font-size: 15px; box-shadow: var(--shadow-float); }
-        .btn-google { width: 100%; padding: 14px; background: white; border: 2px solid var(--border); border-radius: 16px; font-weight: 700; color: var(--text-dark); display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; margin-bottom: 20px; transition: 0.2s; font-size: 15px; }
-        .member-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
-
-        /* --- MOBILE RESPONSIVE FIX --- */
-        #mobile-nav { display: none; }
-
-        @media (max-width: 800px) {
-            #nav-rail { display: none; } 
-            #list-panel { width: 100%; border-right: none; height: calc(100vh - 70px); }
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --glass-input: rgba(255, 255, 255, 0.06);
+            --text-main: #ffffff;
+            --text-sub: rgba(255, 255, 255, 0.6);
             
-            /* NAV BAWAH */
-            #mobile-nav { 
-                display: flex; 
-                height: 70px; 
-                position: fixed; 
-                bottom: 0; 
-                left: 0;
-                width: 100%; 
-                background: var(--surface); 
-                border-top: 1px solid var(--border); 
-                z-index: 50; 
-                justify-content: space-around; 
-                align-items: center; 
-                padding-bottom: 5px;
-            }
-            .mob-item { display: flex; flex-direction: column; align-items: center; color: #94a3b8; font-size: 10px; font-weight: 600; padding: 5px 15px; border-radius: 12px; }
-            .mob-item.active { color: var(--primary); background: var(--primary-bg); }
-            .mob-item i { font-size: 24px; margin-bottom: 4px; }
+            /* Warna default background abstrak */
+            --bg-color-1: #1a2a6c;
+            --bg-color-2: #b21f1f;
+            --bg-color-3: #fdbb2d;
+            --bg-color-4: #1d2671;
+        }
 
-            /* CHAT PANEL FULL SCREEN (FIXED) */
-            #chat-panel { 
-                position: fixed; 
-                inset: 0; 
-                transform: translateX(100%); 
-                transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-                z-index: 100; /* Di atas Nav Bawah */
-                background: var(--bg-main);
-                padding-bottom: 0; /* Reset padding */
-                height: 100%; /* Full height */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100vh;
+            height: -webkit-fill-available;
+            overflow: hidden;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .player-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            background: #000;
+        }
+
+        /* 1. AMBIENT BACKGROUND SYSTEM */
+        .ambient-background-container {
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            z-index: 1;
+            filter: blur(80px) saturate(150%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            opacity: 0.85;
+        }
+
+        .animated-gradient {
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 30%, var(--bg-color-1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, var(--bg-color-2) 0%, transparent 50%),
+                radial-gradient(circle at 70% 80%, var(--bg-color-3) 0%, transparent 50%),
+                radial-gradient(circle at 10% 90%, var(--bg-color-4) 0%, transparent 50%);
+            background-size: 150% 150%;
+            background-color: #000;
+            animation: abstractFluidMovement 20s ease infinite alternate;
+        }
+
+        @keyframes abstractFluidMovement {
+            0% { background-position: 0% 0%; transform: scale(1) rotate(0deg); }
+            25% { background-position: 50% 10%; transform: scale(1.1) rotate(2deg); }
+            50% { background-position: 10% 60%; transform: scale(1) rotate(-2deg); }
+            75% { background-position: 80% 40%; transform: scale(1.1) rotate(1deg); }
+            100% { background-position: 20% 90%; transform: scale(1) rotate(0deg); }
+        }
+
+        /* 2. LIQUID GLASS UI OVERLAY */
+        .glass-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.06) 50%, rgba(0,0,0,0.35) 100%);
+            backdrop-filter: blur(25px) saturate(110%);
+            -webkit-backdrop-filter: blur(25px) saturate(110%);
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px 32px 30px 32px;
+        }
+
+        .top-notch-bar {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .notch-line {
+            width: 40px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 3px;
+        }
+
+        .main-content-layout {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .left-panel {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin: auto 0;
+        }
+
+        .cover-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 340px;
+            aspect-ratio: 1;
+            border-radius: 28px;
+            box-shadow: 0 25px 55px rgba(0,0,0,0.5);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .player-container.playing .cover-wrapper {
+            transform: scale(1.04);
+        }
+
+        .cover-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 28px;
+            background-color: #222;
+        }
+
+        .edit-image-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            cursor: pointer;
+            z-index: 5;
+            opacity: 0.7;
+            transition: opacity 0.2s, transform 0.2s;
+        }
+        .edit-image-btn:hover { opacity: 1; }
+        .edit-image-btn:active { transform: scale(0.9); }
+
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            margin-top: auto;
+        }
+
+        /* Track Info */
+        .track-info-row {
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 20px;
+        }
+        .meta-text { max-width: 82%; }
+        .track-title {
+            font-size: 24px; font-weight: 700; color: var(--text-main);
+            letter-spacing: -0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .track-artist {
+            font-size: 19px; font-weight: 400; color: var(--text-sub); margin-top: 2px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        
+        /* Tombol Titik Tiga */
+        .more-btn {
+            background: rgba(255,255,255,0.1); border: none; width: 36px; height: 36px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            color: var(--text-main); cursor: pointer; transition: background 0.2s, transform 0.1s;
+        }
+        .more-btn:hover { background: rgba(255,255,255,0.2); }
+        .more-btn:active { transform: scale(0.9); }
+
+        /* POP-UP MENU DROPDOWN */
+        .context-popup-menu {
+            position: absolute;
+            right: 0;
+            top: 65px;
+            background: rgba(30, 30, 30, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 14px;
+            width: 180px;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.4);
+            z-index: 100;
+            opacity: 0;
+            transform: scale(0.9) translateY(-10px);
+            pointer-events: none;
+            transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+        .context-popup-menu.show {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: auto;
+        }
+        .popup-item {
+            width: 100%;
+            padding: 12px 16px;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 500;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .popup-item:first-child { border-radius: 14px 14px 0 0; }
+        .popup-item:last-child { border-radius: 0 0 14px 14px; }
+        .popup-item:hover { background: rgba(255, 255, 255, 0.12); }
+
+        /* Timeline & Progress */
+        .timeline-container { margin-top: 24px; }
+        .progress-bar-wrapper {
+            position: relative; width: 100%; height: 7px;
+            background: rgba(255, 255, 255, 0.18); border-radius: 4px; cursor: pointer;
+        }
+        .progress-fill {
+            height: 100%; width: 0%; background: rgba(255, 255, 255, 0.95);
+            border-radius: 4px; position: relative;
+        }
+        .time-stamps {
+            display: flex; justify-content: space-between; font-size: 12px;
+            font-weight: 500; color: var(--text-sub); margin-top: 10px;
+        }
+        .dolby-tag { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; opacity: 0.8; }
+
+        /* Media Controls */
+        .controls-row {
+            display: flex; justify-content: space-around; align-items: center;
+            margin-top: 32px; padding: 0 15px;
+        }
+        .control-btn { background: none; border: none; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s; }
+        .control-btn:active { opacity: 0.5; }
+        .play-pause-btn { transform: scale(1.15); transition: transform 0.2s ease; }
+        .play-pause-btn:active { transform: scale(1.0); }
+
+        /* Volume */
+        .volume-row { display: flex; align-items: center; gap: 14px; margin-top: 36px; padding: 0 4px; }
+        .volume-slider-wrapper { flex: 1; height: 5px; background: rgba(255, 255, 255, 0.18); border-radius: 3px; position: relative; cursor: pointer; }
+        .volume-fill { height: 100%; width: 75%; background: rgba(255, 255, 255, 0.6); border-radius: 3px; }
+
+        /* Footer Menu Minimalis (Hanya tombol Tambah Lagu di tengah) */
+        .bottom-footer { display: flex; justify-content: center; align-items: center; margin-top: 40px; position: relative; width: 100%; }
+
+        .add-custom-btn {
+            background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255,255,255,0.25);
+            width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; color: #fff; cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            transition: transform 0.3s, background 0.3s;
+        }
+        .add-custom-btn:hover { background: rgba(255, 255, 255, 0.25); transform: scale(1.05); }
+
+        /* PREMIUM LIQUID GLASS DRAWER */
+        .customizer-drawer {
+            position: absolute; 
+            bottom: -110%; 
+            left: 0; 
+            width: 100%;
+            height: auto;
+            max-height: 85vh;
+            overflow-y: auto;
+            
+            background: rgba(35, 35, 45, 0.45);
+            backdrop-filter: blur(40px) saturate(180%);
+            -webkit-backdrop-filter: blur(40px) saturate(180%);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 32px 32px 0 0;
+            box-shadow: 0 -20px 50px rgba(0,0,0,0.6);
+            
+            padding: 30px 24px 40px 24px;
+            z-index: 999;
+            color: #fff;
+            
+            transition: bottom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.12);
+        }
+        
+        .customizer-drawer.active { 
+            bottom: 0; 
+        }
+
+        .drawer-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 28px; 
+        }
+        .drawer-header h3 { 
+            font-size: 17px; 
+            text-transform: uppercase; 
+            letter-spacing: 1.5px; 
+            color: rgba(255, 255, 255, 0.85);
+            font-weight: 700;
+        }
+        
+        .close-drawer-btn { 
+            background: rgba(255, 255, 255, 0.1); 
+            border: 1px solid rgba(255,255,255,0.15); 
+            color: #fff; 
+            cursor: pointer; 
+            width: 32px; 
+            height: 32px; 
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s, background 0.2s;
+        }
+        .close-drawer-btn:hover { background: rgba(255,255,255,0.2); transform: scale(1.05); }
+
+        .input-group { margin-bottom: 20px; }
+        .input-group label { 
+            display: block; 
+            font-size: 12px; 
+            font-weight: 600;
+            margin-bottom: 8px; 
+            color: var(--text-sub); 
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .input-group input[type="text"] {
+            width: 100%; 
+            padding: 12px 16px; 
+            background: var(--glass-input);
+            border: 1px solid var(--glass-border); 
+            border-radius: 12px; 
+            color: #fff; 
+            font-size: 15px; 
+            outline: none;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .input-group input[type="text"]:focus {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .file-upload-wrapper {
+            position: relative;
+            width: 100%;
+            height: 52px;
+            background: rgba(255,255,255,0.05);
+            border: 1px dashed rgba(255,255,255,0.3);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .file-upload-wrapper:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .file-upload-wrapper span {
+            font-size: 14px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.9);
+        }
+        .file-upload-wrapper input[type="file"] {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .apply-drawer-btn {
+            width: 100%;
+            padding: 14px;
+            margin-top: 10px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.05));
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 14px;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+            transition: background 0.3s, transform 0.2s;
+        }
+        .apply-drawer-btn:hover {
+            background: linear-gradient(135deg, rgba(255,255,255,0.3), rgba(255,255,255,0.1));
+            transform: translateY(-2px);
+        }
+        .apply-drawer-btn:active { transform: translateY(0); }
+
+        /* RESPONSIVE LAYOUT FOR DESKTOP */
+        @media screen and (min-width: 769px) {
+            .top-notch-bar { display: none; }
+            .glass-overlay { padding: 60px 80px; }
+            .main-content-layout { flex-direction: row; align-items: center; gap: 80px; }
+            .left-panel { flex: 1; justify-content: flex-end; margin: 0; }
+            .cover-wrapper { max-width: 440px; width: 100%; }
+            .right-panel { flex: 1; justify-content: center; margin: 0; }
+            .track-info-row { padding-top: 0; }
+            .timeline-container { margin-top: 32px; }
+            .controls-row { margin-top: 40px; }
+            .volume-row { margin-top: 40px; }
+            
+            .customizer-drawer { 
+                width: 450px; 
+                left: 50%; 
+                transform: translateX(-50%); 
+                border-radius: 24px; 
+                bottom: -110%; 
+                height: auto;
             }
-            #chat-panel.show { transform: translateX(0); }
-            .back-btn { display: block; }
-            #empty-state { display: none; }
+            .customizer-drawer.active { 
+                bottom: 30px; 
+            }
+            .context-popup-menu { top: auto; bottom: 50px; }
         }
     </style>
 </head>
 <body>
 
-    <div id="overlay-login" class="modal-bg">
-        <div class="modal" style="text-align: center;">
-            <h2 style="margin:0 0 5px; font-weight:800; color:var(--primary);">Rivo Chat V18</h2>
-            <p style="color:var(--text-med); margin-bottom:25px;">Pilih cara masuk:</p>
-            <button class="btn-google" onclick="app.loginGoogle()">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="22"> Masuk dengan Google
-            </button>
-            <div style="display:flex;align-items:center;color:var(--text-med);font-size:12px;margin-bottom:20px;gap:10px;">
-                <div style="flex:1;height:1px;background:var(--border)"></div>ATAU<div style="flex:1;height:1px;background:var(--border)"></div>
-            </div>
-            <input id="username-inp" class="inp-log" placeholder="Buat Username (Tanpa spasi)...">
-            <button class="btn-primary" onclick="app.loginManual()">Masuk dengan Username</button>
-        </div>
+<div class="player-container" id="playerMainCard">
+    <!-- Background Gelombang Cairan Abstrak -->
+    <div class="ambient-background-container" id="ambientBg">
+        <div class="animated-gradient"></div>
     </div>
-
-    <div id="app-container">
+    
+    <!-- UI Layer Kaca Premium -->
+    <div class="glass-overlay">
         
-        <div id="nav-rail">
-            <div class="nav-btn active" onclick="app.tab('chats', this)"><i class='bx bxs-message-rounded-dots'></i></div>
-            <div class="nav-btn" onclick="app.tab('groups', this)"><i class='bx bxs-group'></i></div>
-            <div class="nav-btn" onclick="app.tab('channels', this)"><i class='bx bxs-megaphone'></i></div>
-            <div class="nav-btn" onclick="app.tab('profile', this)"><i class='bx bxs-user-circle'></i></div>
-            <div style="flex:1"></div>
-            <div class="nav-btn" onclick="app.logout()" style="color:#ef4444; background:#fef2f2;"><i class='bx bx-power-off'></i></div>
+        <div class="top-notch-bar">
+            <div class="notch-line"></div>
         </div>
 
-        <div id="list-panel">
-            <div id="view-chats" class="flex-col" style="height:100%; display:flex; flex-direction:column;">
-                <div class="panel-head">Pesan</div>
-                <div class="search-box"><input id="search-chat" class="inp-search" placeholder="Cari teman..." onkeypress="if(event.key==='Enter') app.searchUser()"></div>
-                <div id="list-chats" class="scroll-y" style="padding:0 12px;"></div>
-            </div>
-            <div id="view-groups" class="hidden" style="height:100%; display:flex; flex-direction:column;">
-                <div class="panel-head">Grup <div class="add-btn" onclick="app.openCreateModal('group')"><i class='bx bx-plus'></i></div></div>
-                <div id="list-groups" class="scroll-y" style="padding:0 12px;"></div>
-            </div>
-            <div id="view-channels" class="hidden" style="height:100%; display:flex; flex-direction:column;">
-                <div class="panel-head">Saluran <div class="add-btn" onclick="app.openCreateModal('channel')"><i class='bx bx-plus'></i></div></div>
-                <div id="list-channels" class="scroll-y" style="padding:0 12px;"></div>
-            </div>
-            <div id="view-profile" class="hidden" style="height:100%; display:flex; flex-direction:column;">
-                <div class="panel-head">Profil Saya</div>
-                <div class="profile-card">
-                    <div class="profile-pic-big" onclick="document.getElementById('file-user').click()">
-                        <div id="my-ava-big">?</div>
-                        <div class="edit-overlay">GANTI FOTO</div>
+        <!-- RESPONSIVE LAYOUT WRAPPER -->
+        <div class="main-content-layout">
+            
+            <!-- [SISI KIRI]: GAMBAR COVER ALBUM -->
+            <div class="left-panel">
+                <div class="cover-wrapper">
+                    <div class="edit-image-btn" id="pencilEditBtn" title="Ganti Cover Gambar">
+                        <i data-lucide="pencil" style="width: 16px; height: 16px;"></i>
                     </div>
-                    <input type="file" id="file-user" class="hidden" accept="image/*" onchange="app.uploadUser(this)">
-                    <h2 id="my-name-disp" style="margin:0 0 5px; font-weight:800;">User</h2>
-                    <p style="color:var(--text-med); margin-bottom:20px;">@<span id="my-user-disp">username</span></p>
-                    <button class="btn-primary" onclick="app.logout()" style="background:#fef2f2; color:#ef4444; box-shadow:none; border:1px solid #fee2e2;">Keluar</button>
+                    <img src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=600" alt="Cover Album" class="cover-image" id="coverArt">
                 </div>
             </div>
-        </div>
 
-        <div id="chat-panel">
-            <div id="empty-state" style="height:100%; display:flex; align-items:center; justify-content:center; flex-direction:column; color:var(--text-med);">
-                <i class='bx bxs-chat' style="font-size:80px; color:var(--primary-light);"></i>
-                <h3>Pilih Obrolan</h3>
-            </div>
-            <div id="active-chat" class="hidden">
-                <div class="chat-head" onclick="app.viewInfo()">
-                    <i class='bx bx-chevron-left back-btn' onclick="event.stopPropagation(); app.closeChat()"></i>
-                    <div class="avatar" id="head-ava" style="width:40px; height:40px; border-radius:12px;">?</div>
-                    <div style="flex:1">
-                        <div id="head-name" style="font-weight:800; font-size:16px;">User</div>
-                        <div id="head-desc" style="font-size:12px; color:var(--text-med); font-weight:500;">Info</div>
+            <!-- [SISI KANAN]: KONTROL, PROGRESS BAR, TRACK INFO -->
+            <div class="right-panel">
+                
+                <div class="track-info-row">
+                    <div class="meta-text">
+                        <div class="track-title" id="displayTitle">HEARTFIRST</div>
+                        <div class="track-artist" id="displayArtist">Kelsea Ballerini</div>
+                    </div>
+                    
+                    <button class="more-btn" id="moreMenuBtn" title="Buka Menu Opsi">
+                        <i data-lucide="more-horizontal" style="width: 18px; height: 18px;"></i>
+                    </button>
+
+                    <!-- DROPDOWN CONTEXT MENU -->
+                    <div class="context-popup-menu" id="contextPopupMenu">
+                        <button class="popup-item" id="downloadAudioAction">
+                            <i data-lucide="download" style="width: 16px; height: 16px;"></i>
+                            <span>Download Audio</span>
+                        </button>
                     </div>
                 </div>
-                <div id="msgs-area" class="msgs-area"></div>
-                <div class="input-bar">
-                    <input type="file" id="file-m" class="hidden" accept="image/*" onchange="app.sendImg(this)">
-                    <i class='bx bx-image-add' style="font-size:24px; color:var(--text-med); cursor:pointer;" onclick="document.getElementById('file-m').click()"></i>
-                    <input id="msg-in" class="inp-chat" placeholder="Ketik pesan..." onkeypress="if(event.key==='Enter') app.send()">
-                    <button onclick="app.send()" class="btn-send"><i class='bx bxs-send'></i></button>
+
+                <div class="timeline-container">
+                    <div class="progress-bar-wrapper" id="progressBar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="time-stamps">
+                        <span id="currentTime">0:00</span>
+                        <span class="dolby-tag"><i data-lucide="audio-lines" style="width:12px; height:12px;"></i> Dolby Atmos</span>
+                        <span id="durationTime">-0:00</span>
+                    </div>
                 </div>
-            </div>
-        </div>
 
-        <div id="mobile-nav">
-            <div class="mob-item active" onclick="app.tab('chats', this)"><i class='bx bxs-message-rounded-dots'></i>Chat</div>
-            <div class="mob-item" onclick="app.tab('groups', this)"><i class='bx bxs-group'></i>Grup</div>
-            <div class="mob-item" onclick="app.tab('channels', this)"><i class='bx bxs-megaphone'></i>Saluran</div>
-            <div class="mob-item" onclick="app.tab('profile', this)"><i class='bx bxs-user-circle'></i>Profil</div>
-        </div>
-    </div>
-
-    <div id="modal-create" class="modal-bg hidden">
-        <div class="modal">
-            <h3 style="margin-top:0;" id="create-title">Buat Baru <span style="float:right;cursor:pointer" onclick="app.modal('create', false)">&times;</span></h3>
-            <input id="new-gname" class="inp-log" placeholder="Nama Grup/Saluran...">
-            <button class="btn-primary" onclick="app.createAction()">Buat</button>
-        </div>
-    </div>
-
-    <div id="modal-info" class="modal-bg hidden">
-        <div class="modal">
-            <h3 style="margin-top:0;">Info <span style="float:right;cursor:pointer" onclick="app.modal('info', false)">&times;</span></h3>
-            <div class="profile-pic-big" id="info-img-box" style="width:100px; height:100px; font-size:40px;">
-                <div id="info-img"></div>
-                <div class="edit-overlay" id="grp-edit-ov">GANTI</div>
-            </div>
-            <input type="file" id="file-grp" class="hidden" accept="image/*" onchange="app.uploadGrp(this)">
-            <h2 id="info-name" style="text-align:center; margin:10px 0;">Nama</h2>
-            <div id="admin-tools" class="hidden" style="margin-bottom:15px; background:var(--bg-main); padding:10px; border-radius:12px;">
-                <p style="font-size:12px; font-weight:bold; margin-bottom:5px;">Tambah Anggota (Email/Username):</p>
-                <div style="display:flex; gap:5px;">
-                    <input id="new-mem-inp" class="inp-log" style="margin:0; padding:8px;" placeholder="ID Teman...">
-                    <button class="btn-primary" style="width:auto; padding:8px 12px; font-size:12px;" onclick="app.addNewMember()">Add</button>
+                <!-- MEDIA CONTROLS (MUNDUR 10 DETIK / MAJU 10 DETIK) -->
+                <div class="controls-row">
+                    <button class="control-btn" id="rewindBtn" title="Mundur 10 Detik">
+                        <i data-lucide="rewind" style="width: 32px; height: 32px; fill: currentColor;"></i>
+                    </button>
+                    <button class="control-btn play-pause-btn" id="playBtn">
+                        <span id="playIconContainer">
+                            <i data-lucide="play" style="width: 42px; height: 42px; fill: currentColor;"></i>
+                        </span>
+                    </button>
+                    <button class="control-btn" id="fastForwardBtn" title="Maju 10 Detik">
+                        <i data-lucide="fast-forward" style="width: 32px; height: 32px; fill: currentColor;"></i>
+                    </button>
                 </div>
+
+                <div class="volume-row">
+                    <i data-lucide="volume" style="width: 14px; height: 14px; color: #fff; opacity:0.4;"></i>
+                    <div class="volume-slider-wrapper" id="volumeSlider">
+                        <div class="volume-fill" id="volumeFill"></div>
+                    </div>
+                    <i data-lucide="volume-2" style="width: 14px; height: 14px; color: #fff; opacity:0.4;"></i>
+                </div>
+
             </div>
-            <div id="info-list" class="scroll-y" style="max-height:150px; border:1px solid var(--border); border-radius:12px; padding:10px;"></div>
         </div>
+
+        <!-- Menu Paling Bawah (Hanya Tombol Tambah Lagu "+") -->
+        <div class="bottom-footer">
+            <div class="add-custom-btn" id="openDrawerBtn" title="Buka Pengaturan Musik">
+                <i data-lucide="plus" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, onSnapshot, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    <!-- Trigger Input File Image Tersembunyi -->
+    <input type="file" id="hiddenImageInput" accept="image/*" style="display: none;">
 
-        // 🔴 PASTE CONFIG KAMU DI SINI 👇
-        const firebaseConfig = {
-            apiKey: "AIzaSyC70M2KvsPNjF7yG14FQWB052g5pW-mP7E",
-            authDomain: "chat-rivo.firebaseapp.com",
-            projectId: "chat-rivo",
-            storageBucket: "chat-rivo.firebasestorage.app",
-            messagingSenderId: "1089721856706",
-            appId: "1:1089721856706:web:235f8070bde6becaca815b",
-            measurementId: "G-B36Q39C3E0"
+    <!-- PREMIUM LIQUID GLASS DRAWER -->
+    <div class="customizer-drawer" id="customizerDrawer">
+        <div class="drawer-header">
+            <h3>Pengaturan Musik</h3>
+            <button class="close-drawer-btn" id="closeDrawerBtn" title="Tutup">
+                <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+            </button>
+        </div>
+        
+        <div class="input-group">
+            <label>Judul Lagu</label>
+            <input type="text" id="inputTitle" value="HEARTFIRST" autocomplete="off">
+        </div>
+        
+        <div class="input-group">
+            <label>Nama Artis</label>
+            <input type="text" id="inputArtist" value="Kelsea Ballerini" autocomplete="off">
+        </div>
+        
+        <div class="input-group">
+            <label>Upload File Audio (.mp3)</label>
+            <div class="file-upload-wrapper">
+                <i data-lucide="music" style="width: 18px; height: 18px; color: rgba(255,255,255,0.7);"></i>
+                <span id="audioFileNameDisplay">Pilih file lagu kustom...</span>
+                <input type="file" id="inputAudio" accept="audio/mp3">
+            </div>
+        </div>
+
+        <button class="apply-drawer-btn" id="applyDrawerBtn">
+            <i data-lucide="check" style="width: 18px; height: 18px;"></i>
+            <span>Terapkan Perubahan</span>
+        </button>
+    </div>
+</div>
+
+<audio id="audioEngine"></audio>
+
+<script>
+    lucide.createIcons();
+
+    // DOM Elements
+    const playerMainCard = document.getElementById('playerMainCard');
+    const audioEngine = document.getElementById('audioEngine');
+    const playBtn = document.getElementById('playBtn');
+    const playIconContainer = document.getElementById('playIconContainer');
+    const rewindBtn = document.getElementById('rewindBtn');
+    const fastForwardBtn = document.getElementById('fastForwardBtn');
+    const progressBar = document.getElementById('progressBar');
+    const progressFill = document.getElementById('progressFill');
+    const currentTimeText = document.getElementById('currentTime');
+    const durationTimeText = document.getElementById('durationTime');
+    const volumeSlider = document.getElementById('volumeSlider');
+    const volumeFill = document.getElementById('volumeFill');
+
+    // Menu Pop-up & Downloader Elements
+    const moreMenuBtn = document.getElementById('moreMenuBtn');
+    const contextPopupMenu = document.getElementById('contextPopupMenu');
+    const downloadAudioAction = document.getElementById('downloadAudioAction');
+
+    // Customizer Elements
+    const openDrawerBtn = document.getElementById('openDrawerBtn');
+    const closeDrawerBtn = document.getElementById('closeDrawerBtn');
+    const applyDrawerBtn = document.getElementById('applyDrawerBtn');
+    const customizerDrawer = document.getElementById('customizerDrawer');
+    const pencilEditBtn = document.getElementById('pencilEditBtn');
+    const hiddenImageInput = document.getElementById('hiddenImageInput');
+    const inputTitle = document.getElementById('inputTitle');
+    const inputArtist = document.getElementById('inputArtist');
+    const inputAudio = document.getElementById('inputAudio');
+    const audioFileNameDisplay = document.getElementById('audioFileNameDisplay');
+    const displayTitle = document.getElementById('displayTitle');
+    const displayArtist = document.getElementById('displayArtist');
+    const coverArt = document.getElementById('coverArt');
+
+    let isPlaying = false;
+    let rawAudioArrayBuffer = null;
+
+    function formatTime(secs) {
+        if (isNaN(secs)) return "0:00";
+        const minutes = Math.floor(secs / 60);
+        const seconds = Math.floor(secs % 60);
+        return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    }
+
+    function togglePlayIcon(statusPlaying) {
+        if (statusPlaying) {
+            playIconContainer.innerHTML = `<i data-lucide="pause" style="width: 42px; height: 42px; fill: currentColor;"></i>`;
+        } else {
+            playIconContainer.innerHTML = `<i data-lucide="play" style="width: 42px; height: 42px; fill: currentColor;"></i>`;
+        }
+        lucide.createIcons();
+    }
+
+    function updateAmbientColors(imgUrl) {
+        const img = new Image();
+        img.crossOrigin = "Anonymous";
+        img.src = imgUrl;
+        
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 1; canvas.height = 1;
+            ctx.drawImage(img, 0, 0, 1, 1);
+            const r = ctx.getImageData(0, 0, 1, 1).data[0];
+            const g = ctx.getImageData(0, 0, 1, 1).data[1];
+            const b = ctx.getImageData(0, 0, 1, 1).data[2];
+            
+            const color1 = `rgba(${r + 35}, ${g - 25}, ${b + 45}, 0.85)`;
+            const color2 = `rgba(${r - 25}, ${g + 55}, ${b - 15}, 0.75)`;
+            const color3 = `rgba(${r + 65}, ${g + 35}, ${b - 55}, 0.65)`;
+            const color4 = `rgba(${r - 45}, ${g - 35}, ${b + 65}, 0.85)`;
+
+            document.documentElement.style.setProperty('--bg-color-1', color1);
+            document.documentElement.style.setProperty('--bg-color-2', color2);
+            document.documentElement.style.setProperty('--bg-color-3', color3);
+            document.documentElement.style.setProperty('--bg-color-4', color4);
         };
+    }
 
-        const fApp = initializeApp(firebaseConfig);
-        const db = getFirestore(fApp);
-        const auth = getAuth(fApp);
-        const provider = new GoogleAuthProvider();
+    updateAmbientColors(coverArt.src);
 
-        window.app = {
-            user: null, chatId: null, isGrp: false, createType: 'group',
+    // KONTROL ANIMASI DRAWER
+    openDrawerBtn.addEventListener('click', () => customizerDrawer.classList.add('active'));
+    closeDrawerBtn.addEventListener('click', () => customizerDrawer.classList.remove('active'));
+    applyDrawerBtn.addEventListener('click', () => customizerDrawer.classList.remove('active'));
 
-            loginManual: () => {
-                const u = document.getElementById('username-inp').value.trim().toLowerCase().replace(/\s/g, '');
-                if(!u) return alert("Isi username!");
-                app.processLogin(u, u, null); 
-            },
-            loginGoogle: () => {
-                signInWithPopup(auth, provider).then(res => {
-                    app.processLogin(res.user.email, res.user.displayName, res.user.photoURL);
-                }).catch(e => alert(e.message));
-            },
-            processLogin: async (id, name, pic) => {
-                app.user = id; localStorage.setItem('rivo_v18_user', app.user);
-                const ref = doc(db, "users", app.user);
-                const snap = await getDoc(ref);
-                if(!snap.exists()) {
-                    await setDoc(ref, { email: id, name: name || id, avatar: pic, chats: [], groups: [] });
-                }
-                app.init();
-            },
-            init: () => {
-                document.getElementById('overlay-login').classList.add('hidden');
-                document.getElementById('app-container').style.display = 'flex';
-                app.tab('chats', document.querySelector('.nav-btn'));
-                app.loadMyProfile();
-            },
-            logout: () => { localStorage.removeItem('rivo_v18_user'); location.reload(); },
+    // Ganti Cover
+    pencilEditBtn.addEventListener('click', () => hiddenImageInput.click());
+    hiddenImageInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            coverArt.src = URL.createObjectURL(file);
+            updateAmbientColors(coverArt.src);
+        }
+    });
 
-            tab: (t, el) => {
-                document.querySelectorAll('.nav-btn, .mob-item').forEach(x => x.classList.remove('active'));
-                if(el) {
-                    const idx = ['chats','groups','channels','profile'].indexOf(t);
-                    if(idx !== -1) {
-                        document.querySelectorAll('.nav-btn')[idx].classList.add('active');
-                        document.querySelectorAll('.mob-item')[idx].classList.add('active');
-                    }
-                }
-                ['view-chats','view-groups','view-channels','view-profile'].forEach(id => document.getElementById(id).classList.add('hidden'));
-                document.getElementById('view-'+t).classList.remove('hidden');
-                if(t==='chats') app.listenChats(); else if(t==='profile') app.loadMyProfile(); else app.listenGroups(t);
-            },
+    inputTitle.addEventListener('input', (e) => displayTitle.textContent = e.target.value || 'Untitled');
+    inputArtist.addEventListener('input', (e) => displayArtist.textContent = e.target.value || 'Unknown Artist');
 
-            listenChats: () => {
-                onSnapshot(doc(db, "users", app.user), (d) => {
-                    const list = document.getElementById('list-chats'); list.innerHTML="";
-                    const data = d.data();
-                    if(data?.chats) data.chats.forEach(async c => {
-                        const p = (await getDoc(doc(db, "users", c.id))).data();
-                        app.renderItem(list, p.name, "Chat Pribadi", p.avatar, () => app.openChat(c.chatId, c.id, false));
-                    });
-                });
-            },
-            listenGroups: (type) => { 
-                const target = type==='groups' ? 'list-groups' : 'list-channels';
-                onSnapshot(doc(db, "users", app.user), (d) => {
-                    const list = document.getElementById(target); list.innerHTML="";
-                    const data = d.data();
-                    if(data?.groups) data.groups.forEach(async g => {
-                        const gSnap = await getDoc(doc(db, "groups", g.id));
-                        if(gSnap.exists()) {
-                            const gd = gSnap.data();
-                            const gType = gd.type || 'group';
-                            if((type === 'groups' && gType === 'group') || (type === 'channels' && gType === 'channel')) {
-                                app.renderItem(list, gd.name, type==='groups'?`${gd.members.length} Anggota`:'Broadcast', gd.avatar, () => app.openChat(g.id, g.id, true));
-                            }
-                        }
-                    });
-                });
-            },
-            renderItem: (cont, name, sub, img, onClick) => {
-                const d = document.createElement('div'); d.className='list-item';
-                const ava = img ? `<img src="${img}">` : name[0].toUpperCase();
-                d.innerHTML = `<div class="avatar">${ava}</div><div class="item-info"><div class="item-name">${name}</div><div class="item-sub">${sub}</div></div>`;
-                d.onclick = onClick; cont.appendChild(d);
-            },
+    // Memproses Audio Input
+    inputAudio.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            audioFileNameDisplay.textContent = file.name;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                rawAudioArrayBuffer = e.target.result;
+            };
+            reader.readAsArrayBuffer(file);
 
-            searchUser: async () => {
-                const t = document.getElementById('search-chat').value.trim().toLowerCase();
-                if(t===app.user) return;
-                const s = await getDoc(doc(db, "users", t));
-                if(s.exists()) {
-                    const cid = [app.user, t].sort().join("_");
-                    await updateDoc(doc(db, "users", app.user), { chats: arrayUnion({id:t, chatId:cid}) });
-                    await updateDoc(doc(db, "users", t), { chats: arrayUnion({id:app.user, chatId:cid}) });
-                    app.openChat(cid, t, false); document.getElementById('search-chat').value="";
-                } else alert("User tidak ditemukan");
-            },
-            openChat: async (cid, tid, isGrp) => {
-                app.chatId = cid; app.isGrp = isGrp;
-                document.getElementById('empty-state').classList.add('hidden');
-                document.getElementById('active-chat').classList.remove('hidden');
-                document.getElementById('chat-panel').classList.add('show');
-                const nEl=document.getElementById('head-name'), sEl=document.getElementById('head-desc'), aEl=document.getElementById('head-ava');
+            audioEngine.src = URL.createObjectURL(file);
+            audioEngine.load();
+            
+            isPlaying = false;
+            togglePlayIcon(false);
+            playerMainCard.classList.remove('playing');
+        }
+    });
 
-                if(isGrp) {
-                    const g = (await getDoc(doc(db, "groups", tid))).data();
-                    nEl.innerText = g.name; sEl.innerText = g.type === 'channel' ? 'Saluran' : `${g.members.length} Anggota`;
-                    aEl.innerHTML = g.avatar ? `<img src="${g.avatar}">` : (g.type==='channel' ? `<i class='bx bxs-megaphone'></i>` : `<i class='bx bxs-group'></i>`);
-                } else {
-                    const p = (await getDoc(doc(db, "users", tid))).data();
-                    nEl.innerText = p.name; sEl.innerText = "Online";
-                    aEl.innerHTML = p.avatar ? `<img src="${p.avatar}">` : `<i class='bx bxs-user'></i>`;
-                }
+    audioEngine.addEventListener('loadedmetadata', () => {
+        durationTimeText.textContent = "-" + formatTime(audioEngine.duration);
+    });
 
-                onSnapshot(collection(db, "chats", cid, "messages"), (snap) => {
-                    const box = document.getElementById('msgs-area'); box.innerHTML="";
-                    let msgs = []; snap.forEach(d => msgs.push(d.data()));
-                    msgs.sort((a,b)=>a.time-b.time);
-                    msgs.forEach(m => {
-                        const me = m.sender===app.user;
-                        const d = document.createElement('div'); d.className=`bubble ${me?'me':'other'}`;
-                        const snd = (!me && app.isGrp) ? `<span class="bubble-name">${m.senderName}</span>` : '';
-                        const cnt = m.img ? `<img src="${m.img}" style="max-width:100%;border-radius:12px">` : `<div>${m.text}</div>`;
-                        d.innerHTML = `${snd}${cnt}`;
-                        box.appendChild(d);
-                    });
-                    box.scrollTop = box.scrollHeight;
-                });
-            },
-            closeChat: () => document.getElementById('chat-panel').classList.remove('show'),
-            send: async () => {
-                const i=document.getElementById('msg-in'); const t=i.value.trim();
-                if(!t || !app.chatId) return;
-                const u = (await getDoc(doc(db, "users", app.user))).data();
-                await addDoc(collection(db, "chats", app.chatId, "messages"), { sender:app.user, senderName:u.name, text:t, time:Date.now() });
-                i.value="";
-            },
-            sendImg: (i) => {
-                if(i.files[0]) { const r=new FileReader(); r.readAsDataURL(i.files[0]); r.onload=async(e)=>{
-                    const u = (await getDoc(doc(db, "users", app.user))).data();
-                    await addDoc(collection(db, "chats", app.chatId, "messages"), { sender:app.user, senderName:u.name, img:e.target.result, time:Date.now() });
-                }}
-            },
+    // Kontrol Play/Pause
+    playBtn.addEventListener('click', () => {
+        if (!audioEngine.src) {
+            customizerDrawer.classList.add('active');
+            return;
+        }
+        if (isPlaying) {
+            audioEngine.pause();
+            playerMainCard.classList.remove('playing');
+            togglePlayIcon(false);
+        } else {
+            audioEngine.play();
+            playerMainCard.classList.add('playing');
+            togglePlayIcon(true);
+        }
+        isPlaying = !isPlaying;
+    });
 
-            loadMyProfile: async () => {
-                const d = (await getDoc(doc(db, "users", app.user))).data();
-                document.getElementById('my-name-disp').innerText = d.name;
-                document.getElementById('my-user-disp').innerText = d.email;
-                document.getElementById('my-ava-big').innerHTML = d.avatar ? `<img src="${d.avatar}" style="width:100%;height:100%;object-fit:cover">` : `<i class='bx bxs-user'></i>`;
-            },
-            uploadUser: (i) => {
-                if(i.files[0]) { const r=new FileReader(); r.readAsDataURL(i.files[0]); r.onload=async(e)=>{
-                    await updateDoc(doc(db,"users",app.user), {avatar:e.target.result}); app.loadMyProfile();
-                }}
-            },
-            openCreateModal: (type) => {
-                app.createType = type;
-                document.getElementById('create-title').innerHTML = `Buat ${type==='group'?'Grup':'Saluran'} <span style="float:right;cursor:pointer" onclick="app.modal('create',false)">&times;</span>`;
-                app.modal('create', true);
-            },
-            createAction: async () => {
-                const n = document.getElementById('new-gname').value; if(!n) return alert("Nama wajib!");
-                const gRef = await addDoc(collection(db, "groups"), { name:n, admin:app.user, members:[app.user], avatar:null, type:app.createType });
-                await updateDoc(doc(db, "users", app.user), { groups: arrayUnion({id: gRef.id}) });
-                app.modal('create', false); alert("Berhasil!");
-            },
-            viewInfo: async () => {
-                if(!app.chatId || !app.isGrp) return;
-                app.modal('info', true);
-                const g = (await getDoc(doc(db, "groups", app.chatId))).data();
-                document.getElementById('info-name').innerText = g.name;
-                const imgBox = document.getElementById('info-img-box');
-                document.getElementById('info-img').innerHTML = g.avatar ? `<img src="${g.avatar}" style="width:100%;height:100%;object-fit:cover">` : `<i class='bx bxs-${g.type==='channel'?'megaphone':'group'}'></i>`;
-                
-                const adminTools = document.getElementById('admin-tools');
-                const list = document.getElementById('info-list');
-                
-                if(g.admin === app.user) {
-                    adminTools.classList.remove('hidden');
-                    document.getElementById('grp-edit-ov').style.display = 'block';
-                    imgBox.onclick = () => document.getElementById('file-grp').click();
-                } else {
-                    adminTools.classList.add('hidden');
-                    document.getElementById('grp-edit-ov').style.display = 'none';
-                    imgBox.onclick = null;
-                }
+    // FUNGSI BARU: TIMESHIFT -10 DETIK (REWIND)
+    rewindBtn.addEventListener('click', () => {
+        if (!audioEngine.src) return;
+        audioEngine.currentTime = Math.max(0, audioEngine.currentTime - 10);
+    });
 
-                list.innerHTML = "";
-                g.members.forEach(m => {
-                    const row = document.createElement('div'); row.className='member-row';
-                    row.innerHTML = `<span>${m}</span> ${m===g.admin?'<span style="font-size:10px;color:var(--primary);font-weight:bold">ADMIN</span>':''}`;
-                    list.appendChild(row);
-                });
-            },
-            addNewMember: async () => {
-                const u = document.getElementById('new-mem-inp').value.trim().toLowerCase();
-                const uSnap = await getDoc(doc(db, "users", u));
-                if(uSnap.exists()) {
-                    await updateDoc(doc(db, "groups", app.chatId), { members: arrayUnion(u) });
-                    await updateDoc(doc(db, "users", u), { groups: arrayUnion({id: app.chatId}) });
-                    alert("Member ditambahkan!"); app.viewInfo();
-                } else alert("User tidak ditemukan");
-            },
-            uploadGrp: (i) => {
-                if(i.files[0] && app.isGrp) { const r=new FileReader(); r.readAsDataURL(i.files[0]); r.onload=async(e)=>{
-                    await updateDoc(doc(db, "groups", app.chatId), { avatar: e.target.result });
-                    app.viewInfo(); app.listenGroups(app.createType === 'group' ? 'groups' : 'channels');
-                    app.openChat(app.chatId, app.chatId, true);
-                }}
-            },
-            modal: (id, show) => document.getElementById('modal-'+id).classList[show?'remove':'add']('hidden')
-        };
+    // FUNGSI BARU: TIMESHIFT +10 DETIK (FAST FORWARD)
+    fastForwardBtn.addEventListener('click', () => {
+        if (!audioEngine.src || isNaN(audioEngine.duration)) return;
+        audioEngine.currentTime = Math.min(audioEngine.duration, audioEngine.currentTime + 10);
+    });
 
-        const saved = localStorage.getItem('rivo_v18_user'); if(saved) { app.user = saved; app.init(); }
-    </script>
+    audioEngine.addEventListener('timeupdate', () => {
+        const current = audioEngine.currentTime;
+        const duration = audioEngine.duration;
+        if (duration) {
+            progressFill.style.width = `${(current / duration) * 100}%`;
+            currentTimeText.textContent = formatTime(current);
+            durationTimeText.textContent = "-" + formatTime(duration - current);
+        }
+    });
+
+    progressBar.addEventListener('click', (e) => {
+        if (!audioEngine.duration) return;
+        const rect = progressBar.getBoundingClientRect();
+        audioEngine.currentTime = ((e.clientX - rect.left) / rect.width) * audioEngine.duration;
+    });
+
+    volumeSlider.addEventListener('click', (e) => {
+        const rect = volumeSlider.getBoundingClientRect();
+        let vol = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+        audioEngine.volume = vol;
+        volumeFill.style.width = `${vol * 100}%`;
+    });
+
+    // POP-UP DROPDOWN MENU TOGGLE
+    moreMenuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        contextPopupMenu.classList.toggle('show');
+    });
+
+    document.addEventListener('click', () => {
+        contextPopupMenu.classList.remove('show');
+    });
+
+    // PROSES INJEKSI & DOWNLOAD
+    downloadAudioAction.addEventListener('click', async () => {
+        contextPopupMenu.classList.remove('show');
+
+        if (!rawAudioArrayBuffer) {
+            customizerDrawer.classList.add('active');
+            alert("Silakan masukkan file audio .mp3 kamu dulu di panel pengaturan ini!");
+            return;
+        }
+
+        const title = displayTitle.textContent;
+        const artist = displayArtist.textContent;
+
+        try {
+            const imgResponse = await fetch(coverArt.src);
+            const imgBlob = await imgResponse.blob();
+            const imgArrayBuffer = await imgBlob.arrayBuffer();
+
+            const writer = new ID3Writer(rawAudioArrayBuffer);
+            writer.setFrame('TIT2', title)
+                  .setFrame('TPE1', [artist])
+                  .setFrame('APIC', {
+                      type: 3,
+                      data: imgArrayBuffer,
+                      description: 'Cover Art'
+                  });
+            
+            writer.addTag();
+
+            const taggedBlob = writer.getBlob();
+            const downloadUrl = URL.createObjectURL(taggedBlob);
+
+            const downloadLink = document.createElement('a');
+            downloadLink.href = downloadUrl;
+            downloadLink.download = `${title} - ${artist}.mp3`;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            
+            URL.revokeObjectURL(downloadUrl);
+        } catch (error) {
+            console.error(error);
+            const fallbackLink = document.createElement('a');
+            const blob = new Blob([rawAudioArrayBuffer]);
+            fallbackLink.href = URL.createObjectURL(blob);
+            fallbackLink.download = `${title} - ${artist}.mp3`;
+            fallbackLink.click();
+        }
+    });
+</script>
+
 </body>
 </html>
