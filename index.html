@@ -2,26 +2,24 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>vanz Music Player Online</title>
-    <!-- Lucide Icons untuk ikon premium -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Library untuk menyuntikkan gambar & judul langsung ke dalam file MP3 -->
     <script src="https://cdn.jsdelivr.net/npm/browser-id3-writer@4.4.0/dist/browser-id3-writer.min.js"></script>
     
     <style>
         :root {
-            --glass-bg: rgba(255, 255, 255, 0.08);
-            --glass-border: rgba(255, 255, 255, 0.15);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
             --glass-input: rgba(255, 255, 255, 0.06);
             --text-main: #ffffff;
             --text-sub: rgba(255, 255, 255, 0.6);
             
-            /* Warna default background abstrak */
-            --bg-color-1: #1a2a6c;
-            --bg-color-2: #b21f1f;
-            --bg-color-3: #fdbb2d;
-            --bg-color-4: #1d2671;
+            /* Warna default sebelum gambar diekstrak (diambil dari nuansa {BE307727-3300-4B03-AFAF-83D751761C1D}.jpg) */
+            --bg-color-1: #e65c00;
+            --bg-color-2: #191919;
+            --bg-color-3: #bf5f00;
+            --bg-color-4: #0d0d0d;
         }
 
         * {
@@ -30,16 +28,28 @@
             padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             -webkit-font-smoothing: antialiased;
+        }
+
+        /* Biar teks UI gak gampang ke-blok di HP, tapi INPUT TETEP BISA DI-KLIK */
+        body, html, .player-container, .glass-overlay, .track-info-row, .controls-row {
             user-select: none;
+            -webkit-user-select: none;
             -webkit-touch-callout: none;
+        }
+
+        /* MEMASTIKAN INPUT DI HP RESPONSAL DAN BISA DI-KLIK */
+        input, button, select, textarea, .file-upload-wrapper {
+            user-select: auto !important;
+            -webkit-user-select: auto !important;
+            pointer-events: auto !important;
+            cursor: pointer;
         }
 
         body, html {
             width: 100%;
             height: 100vh;
-            height: -webkit-fill-available;
             overflow: hidden;
-            background: #000;
+            background: #0a0a0a;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -48,424 +58,186 @@
         .player-container {
             position: relative;
             width: 100%;
-            height: 100%;
+            height: 100vh;
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            background: #000;
         }
 
-        /* 1. AMBIENT BACKGROUND SYSTEM */
+        /* 1. DYNAMIC FLUID AMBIENT BACKGROUND (FULL SCREEN NO CROP) */
         .ambient-background-container {
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
+            position: fixed;
+            top: -15%;
+            left: -15%;
+            width: 130%;
+            height: 130%;
             z-index: 1;
-            filter: blur(80px) saturate(150%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
+            filter: blur(70px) saturate(170%);
             opacity: 0.85;
+            pointer-events: none;
+            transform: translate3d(0,0,0);
         }
 
         .animated-gradient {
             width: 100%;
             height: 100%;
             background: 
-                radial-gradient(circle at 20% 30%, var(--bg-color-1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, var(--bg-color-2) 0%, transparent 50%),
-                radial-gradient(circle at 70% 80%, var(--bg-color-3) 0%, transparent 50%),
-                radial-gradient(circle at 10% 90%, var(--bg-color-4) 0%, transparent 50%);
-            background-size: 150% 150%;
-            background-color: #000;
-            animation: abstractFluidMovement 20s ease infinite alternate;
+                radial-gradient(circle at 15% 25%, var(--bg-color-1) 0%, transparent 55%),
+                radial-gradient(circle at 85% 15%, var(--bg-color-2) 0%, transparent 60%),
+                radial-gradient(circle at 75% 85%, var(--bg-color-3) 0%, transparent 55%),
+                radial-gradient(circle at 20% 80%, var(--bg-color-4) 0%, transparent 60%);
+            background-size: 140% 140%;
+            animation: fluidAmbientMotion 14s ease infinite alternate;
         }
 
-        @keyframes abstractFluidMovement {
-            0% { background-position: 0% 0%; transform: scale(1) rotate(0deg); }
-            25% { background-position: 50% 10%; transform: scale(1.1) rotate(2deg); }
-            50% { background-position: 10% 60%; transform: scale(1) rotate(-2deg); }
-            75% { background-position: 80% 40%; transform: scale(1.1) rotate(1deg); }
-            100% { background-position: 20% 90%; transform: scale(1) rotate(0deg); }
+        @keyframes fluidAmbientMotion {
+            0% { background-position: 0% 0%; transform: scale(1); }
+            50% { background-position: 50% 50%; transform: scale(1.04); }
+            100% { background-position: 100% 100%; transform: scale(1); }
         }
 
-        /* 2. LIQUID GLASS UI OVERLAY */
+        /* 2. LIQUID GLASS OVERLAY */
         .glass-overlay {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(to bottom, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.06) 50%, rgba(0,0,0,0.35) 100%);
-            backdrop-filter: blur(25px) saturate(110%);
-            -webkit-backdrop-filter: blur(25px) saturate(110%);
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.45) 60%, rgba(0,0,0,0.85) 100%);
+            backdrop-filter: blur(35px) saturate(130%);
+            -webkit-backdrop-filter: blur(35px) saturate(130%);
             z-index: 2;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 40px 32px 30px 32px;
+            padding: 50px 32px calc(30px + env(safe-area-inset-bottom)) 32px;
         }
 
-        .top-notch-bar {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .notch-line {
-            width: 40px;
-            height: 5px;
-            background: rgba(255, 255, 255, 0.25);
-            border-radius: 3px;
-        }
+        .top-notch-bar { width: 100%; display: flex; justify-content: center; align-items: center; margin-bottom: 20px; }
+        .notch-line { width: 40px; height: 5px; background: rgba(255, 255, 255, 0.2); border-radius: 3px; }
 
-        .main-content-layout {
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-            justify-content: space-between;
-            width: 100%;
-        }
-
-        .left-panel {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            margin: auto 0;
-        }
+        .main-content-layout { display: flex; flex-direction: column; flex: 1; justify-content: space-between; width: 100%; }
+        .left-panel { display: flex; justify-content: center; align-items: center; width: 100%; margin: auto 0; }
 
         .cover-wrapper {
             position: relative;
-            width: 100%;
-            max-width: 340px;
-            aspect-ratio: 1;
+            width: 100%; max-width: 320px; aspect-ratio: 1;
             border-radius: 28px;
-            box-shadow: 0 25px 55px rgba(0,0,0,0.5);
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        
-        .player-container.playing .cover-wrapper {
-            transform: scale(1.04);
-        }
-
-        .cover-image {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 28px;
-            background-color: #222;
-        }
+        .player-container.playing .cover-wrapper { transform: scale(1.03); }
+        .cover-image { width: 100%; height: 100%; object-fit: cover; border-radius: 28px; background-color: #1a1a1a; }
 
         .edit-image-btn {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255,255,255,0.2);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            cursor: pointer;
-            z-index: 5;
-            opacity: 0.7;
-            transition: opacity 0.2s, transform 0.2s;
+            position: absolute; top: 16px; right: 16px;
+            background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(255,255,255,0.25);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            width: 38px; height: 38px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; color: #fff; z-index: 5;
         }
-        .edit-image-btn:hover { opacity: 1; }
-        .edit-image-btn:active { transform: scale(0.9); }
 
-        .right-panel {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-            margin-top: auto;
-        }
+        .right-panel { display: flex; flex-direction: column; width: 100%; margin-top: auto; }
 
         /* Track Info */
-        .track-info-row {
-            position: relative;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-top: 20px;
-        }
+        .track-info-row { position: relative; display: flex; justify-content: space-between; align-items: center; padding-top: 15px; }
         .meta-text { max-width: 82%; }
-        .track-title {
-            font-size: 24px; font-weight: 700; color: var(--text-main);
-            letter-spacing: -0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-        .track-artist {
-            font-size: 19px; font-weight: 400; color: var(--text-sub); margin-top: 2px;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
+        .track-title { font-size: 25px; font-weight: 700; color: var(--text-main); letter-spacing: -0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .track-artist { font-size: 19px; font-weight: 400; color: var(--text-sub); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        /* Tombol Titik Tiga */
         .more-btn {
-            background: rgba(255,255,255,0.1); border: none; width: 36px; height: 36px;
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            color: var(--text-main); cursor: pointer; transition: background 0.2s, transform 0.1s;
+            background: rgba(255,255,255,0.1); border: none; width: 38px; height: 38px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--text-main); cursor: pointer;
         }
-        .more-btn:hover { background: rgba(255,255,255,0.2); }
-        .more-btn:active { transform: scale(0.9); }
 
         /* POP-UP MENU DROPDOWN */
         .context-popup-menu {
-            position: absolute;
-            right: 0;
-            top: 65px;
-            background: rgba(30, 30, 30, 0.85);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 14px;
-            width: 180px;
-            box-shadow: 0 12px 35px rgba(0,0,0,0.4);
-            z-index: 100;
-            opacity: 0;
-            transform: scale(0.9) translateY(-10px);
-            pointer-events: none;
-            transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.165, 0.84, 0.44, 1);
+            position: absolute; right: 0; top: 65px;
+            background: rgba(30, 30, 35, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; width: 180px;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.4); z-index: 100;
+            opacity: 0; transform: scale(0.95) translateY(-10px); pointer-events: none;
+            transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .context-popup-menu.show {
-            opacity: 1;
-            transform: scale(1) translateY(0);
-            pointer-events: auto;
-        }
-        .popup-item {
-            width: 100%;
-            padding: 12px 16px;
-            background: none;
-            border: none;
-            color: #fff;
-            font-size: 14px;
-            font-weight: 500;
-            text-align: left;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .popup-item:first-child { border-radius: 14px 14px 0 0; }
-        .popup-item:last-child { border-radius: 0 0 14px 14px; }
+        .context-popup-menu.show { opacity: 1; transform: scale(1) translateY(0); pointer-events: auto; }
+        .popup-item { width: 100%; padding: 13px 16px; background: none; border: none; color: #fff; font-size: 14px; font-weight: 500; text-align: left; display: flex; align-items: center; gap: 10px; }
         .popup-item:hover { background: rgba(255, 255, 255, 0.12); }
 
         /* Timeline & Progress */
-        .timeline-container { margin-top: 24px; }
-        .progress-bar-wrapper {
-            position: relative; width: 100%; height: 7px;
-            background: rgba(255, 255, 255, 0.18); border-radius: 4px; cursor: pointer;
+        .timeline-container { margin-top: 26px; }
+        .progress-bar-wrapper { position: relative; width: 100%; height: 7px; background: rgba(255, 255, 255, 0.15); border-radius: 4px; }
+        .progress-fill { height: 100%; width: 0%; background: rgba(255, 255, 255, 0.95); border-radius: 4px; position: relative; }
+        .time-stamps { display: flex; justify-content: space-between; font-size: 12px; font-weight: 500; color: var(--text-sub); margin-top: 10px; }
+        
+        /* DOLBY ATMOS TAG BUTTON */
+        .dolby-tag { 
+            display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; 
+            opacity: 0.6; transition: all 0.3s ease; padding: 4px 8px; border-radius: 6px;
         }
-        .progress-fill {
-            height: 100%; width: 0%; background: rgba(255, 255, 255, 0.95);
-            border-radius: 4px; position: relative;
-        }
-        .time-stamps {
-            display: flex; justify-content: space-between; font-size: 12px;
-            font-weight: 500; color: var(--text-sub); margin-top: 10px;
-        }
-        .dolby-tag { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; opacity: 0.8; }
+        .dolby-tag.active { opacity: 1; color: #00d2ff; background: rgba(0, 210, 255, 0.15); text-shadow: 0 0 6px rgba(0, 210, 255, 0.5); }
 
         /* Media Controls */
-        .controls-row {
-            display: flex; justify-content: space-around; align-items: center;
-            margin-top: 32px; padding: 0 15px;
-        }
-        .control-btn { background: none; border: none; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s; }
+        .controls-row { display: flex; justify-content: space-around; align-items: center; margin-top: 32px; padding: 0 10px; }
+        .control-btn { background: none; border: none; color: var(--text-main); display: flex; align-items: center; justify-content: center; }
         .control-btn:active { opacity: 0.5; }
-        .play-pause-btn { transform: scale(1.15); transition: transform 0.2s ease; }
-        .play-pause-btn:active { transform: scale(1.0); }
+        .play-pause-btn { transform: scale(1.15); }
 
         /* Volume */
         .volume-row { display: flex; align-items: center; gap: 14px; margin-top: 36px; padding: 0 4px; }
-        .volume-slider-wrapper { flex: 1; height: 5px; background: rgba(255, 255, 255, 0.18); border-radius: 3px; position: relative; cursor: pointer; }
+        .volume-slider-wrapper { flex: 1; height: 5px; background: rgba(255, 255, 255, 0.18); border-radius: 3px; position: relative; }
         .volume-fill { height: 100%; width: 75%; background: rgba(255, 255, 255, 0.6); border-radius: 3px; }
 
-        /* Footer Menu Minimalis (Hanya tombol Tambah Lagu di tengah) */
-        .bottom-footer { display: flex; justify-content: center; align-items: center; margin-top: 40px; position: relative; width: 100%; }
-
+        /* Bottom Footer */
+        .bottom-footer { display: flex; justify-content: center; align-items: center; margin-top: 36px; position: relative; width: 100%; }
         .add-custom-btn {
             background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255,255,255,0.25);
             width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center;
-            justify-content: center; color: #fff; cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-            transition: transform 0.3s, background 0.3s;
+            justify-content: center; color: #fff; box-shadow: 0 8px 24px rgba(0,0,0,0.2);
         }
-        .add-custom-btn:hover { background: rgba(255, 255, 255, 0.25); transform: scale(1.05); }
 
         /* PREMIUM LIQUID GLASS DRAWER */
         .customizer-drawer {
-            position: absolute; 
-            bottom: -110%; 
-            left: 0; 
-            width: 100%;
-            height: auto;
-            max-height: 85vh;
-            overflow-y: auto;
-            
-            background: rgba(35, 35, 45, 0.45);
-            backdrop-filter: blur(40px) saturate(180%);
-            -webkit-backdrop-filter: blur(40px) saturate(180%);
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
-            border-left: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 32px 32px 0 0;
-            box-shadow: 0 -20px 50px rgba(0,0,0,0.6);
-            
-            padding: 30px 24px 40px 24px;
-            z-index: 999;
-            color: #fff;
-            
+            position: absolute; bottom: -110%; left: 0; width: 100%; height: auto; max-height: 85vh; overflow-y: auto;
+            background: rgba(25, 25, 30, 0.75); backdrop-filter: blur(45px) saturate(170%); -webkit-backdrop-filter: blur(45px) saturate(170%);
+            border-top: 1px solid rgba(255, 255, 255, 0.2); border-radius: 32px 32px 0 0; box-shadow: 0 -20px 50px rgba(0,0,0,0.5);
+            padding: 30px 24px 40px 24px; z-index: 999; color: #fff;
             transition: bottom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.12);
         }
-        
-        .customizer-drawer.active { 
-            bottom: 0; 
-        }
-
-        .drawer-header { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-bottom: 28px; 
-        }
-        .drawer-header h3 { 
-            font-size: 17px; 
-            text-transform: uppercase; 
-            letter-spacing: 1.5px; 
-            color: rgba(255, 255, 255, 0.85);
-            font-weight: 700;
-        }
-        
-        .close-drawer-btn { 
-            background: rgba(255, 255, 255, 0.1); 
-            border: 1px solid rgba(255,255,255,0.15); 
-            color: #fff; 
-            cursor: pointer; 
-            width: 32px; 
-            height: 32px; 
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.2s, background 0.2s;
-        }
-        .close-drawer-btn:hover { background: rgba(255,255,255,0.2); transform: scale(1.05); }
+        .customizer-drawer.active { bottom: 0; }
+        .drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+        .drawer-header h3 { font-size: 16px; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(255, 255, 255, 0.85); font-weight: 700; }
+        .close-drawer-btn { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255,255,255,0.15); color: #fff; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
 
         .input-group { margin-bottom: 20px; }
-        .input-group label { 
-            display: block; 
-            font-size: 12px; 
-            font-weight: 600;
-            margin-bottom: 8px; 
-            color: var(--text-sub); 
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        .input-group label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 8px; color: var(--text-sub); text-transform: uppercase; }
+        .input-group input[type="text"] { width: 100%; padding: 14px 16px; background: var(--glass-input); border: 1px solid var(--glass-border); border-radius: 12px; color: #fff; font-size: 15px; outline: none; }
+
+        .file-upload-wrapper { 
+            position: relative; width: 100%; height: 54px; 
+            background: rgba(255,255,255,0.05); border: 1px dashed rgba(255,255,255,0.3); 
+            border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 10px; 
         }
         
-        .input-group input[type="text"] {
-            width: 100%; 
-            padding: 12px 16px; 
-            background: var(--glass-input);
-            border: 1px solid var(--glass-border); 
-            border-radius: 12px; 
-            color: #fff; 
-            font-size: 15px; 
-            outline: none;
-            transition: background 0.3s, border-color 0.3s;
-        }
-        .input-group input[type="text"]:focus {
-            background: rgba(255, 255, 255, 0.12);
-            border-color: rgba(255, 255, 255, 0.4);
+        /* Memastikan input dilempar ke depan agar ketukan jari langsung mengenai elemen asli input */
+        .file-upload-wrapper input[type="file"] { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            opacity: 0; z-index: 99; cursor: pointer;
         }
 
-        .file-upload-wrapper {
-            position: relative;
-            width: 100%;
-            height: 52px;
-            background: rgba(255,255,255,0.05);
-            border: 1px dashed rgba(255,255,255,0.3);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            cursor: pointer;
-            transition: background 0.2s, border-color 0.2s;
-        }
-        .file-upload-wrapper:hover {
-            background: rgba(255,255,255,0.1);
-            border-color: rgba(255,255,255,0.5);
-        }
-        .file-upload-wrapper span {
-            font-size: 14px;
-            font-weight: 500;
-            color: rgba(255,255,255,0.9);
-        }
-        .file-upload-wrapper input[type="file"] {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            opacity: 0;
-            cursor: pointer;
-        }
-
-        .apply-drawer-btn {
-            width: 100%;
-            padding: 14px;
-            margin-top: 10px;
-            background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.05));
-            border: 1px solid rgba(255,255,255,0.3);
-            border-radius: 14px;
-            color: #fff;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-            backdrop-filter: blur(10px);
-            transition: background 0.3s, transform 0.2s;
-        }
-        .apply-drawer-btn:hover {
-            background: linear-gradient(135deg, rgba(255,255,255,0.3), rgba(255,255,255,0.1));
-            transform: translateY(-2px);
-        }
-        .apply-drawer-btn:active { transform: translateY(0); }
+        .apply-drawer-btn { width: 100%; padding: 15px; margin-top: 10px; background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.05)); border: 1px solid rgba(255,255,255,0.3); border-radius: 14px; color: #fff; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
         /* RESPONSIVE LAYOUT FOR DESKTOP */
         @media screen and (min-width: 769px) {
             .top-notch-bar { display: none; }
-            .glass-overlay { padding: 60px 80px; }
+            .glass-overlay { padding: 60px 100px; }
             .main-content-layout { flex-direction: row; align-items: center; gap: 80px; }
             .left-panel { flex: 1; justify-content: flex-end; margin: 0; }
-            .cover-wrapper { max-width: 440px; width: 100%; }
+            .cover-wrapper { max-width: 420px; width: 100%; }
             .right-panel { flex: 1; justify-content: center; margin: 0; }
             .track-info-row { padding-top: 0; }
             .timeline-container { margin-top: 32px; }
             .controls-row { margin-top: 40px; }
             .volume-row { margin-top: 40px; }
             
-            .customizer-drawer { 
-                width: 450px; 
-                left: 50%; 
-                transform: translateX(-50%); 
-                border-radius: 24px; 
-                bottom: -110%; 
-                height: auto;
-            }
-            .customizer-drawer.active { 
-                bottom: 30px; 
-            }
+            .customizer-drawer { width: 450px; left: 50%; transform: translateX(-50%); border-radius: 24px; bottom: -110%; }
+            .customizer-drawer.active { bottom: 40px; }
             .context-popup-menu { top: auto; bottom: 50px; }
         }
     </style>
@@ -473,143 +245,91 @@
 <body>
 
 <div class="player-container" id="playerMainCard">
-    <!-- Background Gelombang Cairan Abstrak -->
     <div class="ambient-background-container" id="ambientBg">
         <div class="animated-gradient"></div>
     </div>
     
-    <!-- UI Layer Kaca Premium -->
     <div class="glass-overlay">
-        
-        <div class="top-notch-bar">
-            <div class="notch-line"></div>
-        </div>
+        <div class="top-notch-bar"><div class="notch-line"></div></div>
 
-        <!-- RESPONSIVE LAYOUT WRAPPER -->
         <div class="main-content-layout">
-            
-            <!-- [SISI KIRI]: GAMBAR COVER ALBUM -->
             <div class="left-panel">
                 <div class="cover-wrapper">
-                    <div class="edit-image-btn" id="pencilEditBtn" title="Ganti Cover Gambar">
-                        <i data-lucide="pencil" style="width: 16px; height: 16px;"></i>
-                    </div>
+                    <div class="edit-image-btn" id="pencilEditBtn" title="Ganti Cover Gambar"><i data-lucide="pencil" style="width: 16px; height: 16px;"></i></div>
                     <img src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=600" alt="Cover Album" class="cover-image" id="coverArt">
                 </div>
             </div>
 
-            <!-- [SISI KANAN]: KONTROL, PROGRESS BAR, TRACK INFO -->
             <div class="right-panel">
-                
                 <div class="track-info-row">
                     <div class="meta-text">
                         <div class="track-title" id="displayTitle">HEARTFIRST</div>
                         <div class="track-artist" id="displayArtist">Kelsea Ballerini</div>
                     </div>
-                    
-                    <button class="more-btn" id="moreMenuBtn" title="Buka Menu Opsi">
-                        <i data-lucide="more-horizontal" style="width: 18px; height: 18px;"></i>
-                    </button>
+                    <button class="more-btn" id="moreMenuBtn"><i data-lucide="more-horizontal" style="width: 18px; height: 18px;"></i></button>
 
-                    <!-- DROPDOWN CONTEXT MENU -->
                     <div class="context-popup-menu" id="contextPopupMenu">
-                        <button class="popup-item" id="downloadAudioAction">
-                            <i data-lucide="download" style="width: 16px; height: 16px;"></i>
-                            <span>Download Audio</span>
-                        </button>
+                        <button class="popup-item" id="downloadAudioAction"><i data-lucide="download" style="width: 16px; height: 16px;"></i><span>Download Audio</span></button>
                     </div>
                 </div>
 
                 <div class="timeline-container">
-                    <div class="progress-bar-wrapper" id="progressBar">
-                        <div class="progress-fill" id="progressFill"></div>
-                    </div>
+                    <div class="progress-bar-wrapper" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
                     <div class="time-stamps">
                         <span id="currentTime">0:00</span>
-                        <span class="dolby-tag"><i data-lucide="audio-lines" style="width:12px; height:12px;"></i> Dolby Atmos</span>
+                        <span class="dolby-tag" id="dolbyToggleBtn"><i data-lucide="audio-lines" style="width:12px; height:12px;"></i> Dolby Atmos</span>
                         <span id="durationTime">-0:00</span>
                     </div>
                 </div>
 
-                <!-- MEDIA CONTROLS (MUNDUR 10 DETIK / MAJU 10 DETIK) -->
                 <div class="controls-row">
-                    <button class="control-btn" id="rewindBtn" title="Mundur 10 Detik">
-                        <i data-lucide="rewind" style="width: 32px; height: 32px; fill: currentColor;"></i>
-                    </button>
+                    <button class="control-btn" id="rewindBtn"><i data-lucide="rewind" style="width: 32px; height: 32px; fill: currentColor;"></i></button>
                     <button class="control-btn play-pause-btn" id="playBtn">
-                        <span id="playIconContainer">
-                            <i data-lucide="play" style="width: 42px; height: 42px; fill: currentColor;"></i>
-                        </span>
+                        <span id="playIconContainer"><i data-lucide="play" style="width: 42px; height: 42px; fill: currentColor;"></i></span>
                     </button>
-                    <button class="control-btn" id="fastForwardBtn" title="Maju 10 Detik">
-                        <i data-lucide="fast-forward" style="width: 32px; height: 32px; fill: currentColor;"></i>
-                    </button>
+                    <button class="control-btn" id="fastForwardBtn"><i data-lucide="fast-forward" style="width: 32px; height: 32px; fill: currentColor;"></i></button>
                 </div>
 
                 <div class="volume-row">
                     <i data-lucide="volume" style="width: 14px; height: 14px; color: #fff; opacity:0.4;"></i>
-                    <div class="volume-slider-wrapper" id="volumeSlider">
-                        <div class="volume-fill" id="volumeFill"></div>
-                    </div>
+                    <div class="volume-slider-wrapper" id="volumeSlider"><div class="volume-fill" id="volumeFill"></div></div>
                     <i data-lucide="volume-2" style="width: 14px; height: 14px; color: #fff; opacity:0.4;"></i>
                 </div>
-
             </div>
         </div>
 
-        <!-- Menu Paling Bawah (Hanya Tombol Tambah Lagu "+") -->
         <div class="bottom-footer">
-            <div class="add-custom-btn" id="openDrawerBtn" title="Buka Pengaturan Musik">
-                <i data-lucide="plus" style="width: 24px; height: 24px;"></i>
-            </div>
+            <div class="add-custom-btn" id="openDrawerBtn"><i data-lucide="plus" style="width: 24px; height: 24px;"></i></div>
         </div>
-
     </div>
 
-    <!-- Trigger Input File Image Tersembunyi -->
     <input type="file" id="hiddenImageInput" accept="image/*" style="display: none;">
 
-    <!-- PREMIUM LIQUID GLASS DRAWER -->
     <div class="customizer-drawer" id="customizerDrawer">
         <div class="drawer-header">
             <h3>Pengaturan Musik</h3>
-            <button class="close-drawer-btn" id="closeDrawerBtn" title="Tutup">
-                <i data-lucide="x" style="width: 16px; height: 16px;"></i>
-            </button>
+            <button class="close-drawer-btn" id="closeDrawerBtn"><i data-lucide="x" style="width: 16px; height: 16px;"></i></button>
         </div>
+        <div class="input-group"><label>Judul Lagu</label><input type="text" id="inputTitle" value="HEARTFIRST" autocomplete="off"></div>
+        <div class="input-group"><label>Nama Artis</label><input type="text" id="inputArtist" value="Kelsea Ballerini" autocomplete="off"></div>
         
         <div class="input-group">
-            <label>Judul Lagu</label>
-            <input type="text" id="inputTitle" value="HEARTFIRST" autocomplete="off">
-        </div>
-        
-        <div class="input-group">
-            <label>Nama Artis</label>
-            <input type="text" id="inputArtist" value="Kelsea Ballerini" autocomplete="off">
-        </div>
-        
-        <div class="input-group">
-            <label>Upload File Audio (.mp3)</label>
-            <div class="file-upload-wrapper">
+            <label>Upload File Audio (Semua Format)</label>
+            <div class="file-upload-wrapper" id="uploadWrapper">
                 <i data-lucide="music" style="width: 18px; height: 18px; color: rgba(255,255,255,0.7);"></i>
                 <span id="audioFileNameDisplay">Pilih file lagu kustom...</span>
-                <input type="file" id="inputAudio" accept="audio/mp3">
+                <input type="file" id="inputAudio" accept="audio/*, .mp3, .wav, .m4a, .ogg, .flac">
             </div>
         </div>
-
-        <button class="apply-drawer-btn" id="applyDrawerBtn">
-            <i data-lucide="check" style="width: 18px; height: 18px;"></i>
-            <span>Terapkan Perubahan</span>
-        </button>
+        <button class="apply-drawer-btn" id="applyDrawerBtn"><i data-lucide="check" style="width: 18px; height: 18px;"></i><span>Terapkan Perubahan</span></button>
     </div>
 </div>
 
-<audio id="audioEngine"></audio>
+<audio id="audioEngine" crossorigin="anonymous"></audio>
 
 <script>
     lucide.createIcons();
 
-    // DOM Elements
     const playerMainCard = document.getElementById('playerMainCard');
     const audioEngine = document.getElementById('audioEngine');
     const playBtn = document.getElementById('playBtn');
@@ -622,13 +342,12 @@
     const durationTimeText = document.getElementById('durationTime');
     const volumeSlider = document.getElementById('volumeSlider');
     const volumeFill = document.getElementById('volumeFill');
+    const dolbyToggleBtn = document.getElementById('dolbyToggleBtn');
 
-    // Menu Pop-up & Downloader Elements
     const moreMenuBtn = document.getElementById('moreMenuBtn');
     const contextPopupMenu = document.getElementById('contextPopupMenu');
     const downloadAudioAction = document.getElementById('downloadAudioAction');
 
-    // Customizer Elements
     const openDrawerBtn = document.getElementById('openDrawerBtn');
     const closeDrawerBtn = document.getElementById('closeDrawerBtn');
     const applyDrawerBtn = document.getElementById('applyDrawerBtn');
@@ -638,6 +357,7 @@
     const inputTitle = document.getElementById('inputTitle');
     const inputArtist = document.getElementById('inputArtist');
     const inputAudio = document.getElementById('inputAudio');
+    const uploadWrapper = document.getElementById('uploadWrapper');
     const audioFileNameDisplay = document.getElementById('audioFileNameDisplay');
     const displayTitle = document.getElementById('displayTitle');
     const displayArtist = document.getElementById('displayArtist');
@@ -645,6 +365,13 @@
 
     let isPlaying = false;
     let rawAudioArrayBuffer = null;
+
+    // Web Audio API Dolby Simulation
+    let audioCtx = null;
+    let audioSource = null;
+    let pannerNode = null;
+    let isDolbyActive = false;
+    let spatialLoopId = null;
 
     function formatTime(secs) {
         if (isNaN(secs)) return "0:00";
@@ -654,14 +381,13 @@
     }
 
     function togglePlayIcon(statusPlaying) {
-        if (statusPlaying) {
-            playIconContainer.innerHTML = `<i data-lucide="pause" style="width: 42px; height: 42px; fill: currentColor;"></i>`;
-        } else {
-            playIconContainer.innerHTML = `<i data-lucide="play" style="width: 42px; height: 42px; fill: currentColor;"></i>`;
-        }
+        playIconContainer.innerHTML = statusPlaying 
+            ? `<i data-lucide="pause" style="width: 42px; height: 42px; fill: currentColor;"></i>`
+            : `<i data-lucide="play" style="width: 42px; height: 42px; fill: currentColor;"></i>`;
         lucide.createIcons();
     }
 
+    // Ekstraksi warna background
     function updateAmbientColors(imgUrl) {
         const img = new Image();
         img.crossOrigin = "Anonymous";
@@ -670,54 +396,102 @@
         img.onload = function() {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-            canvas.width = 1; canvas.height = 1;
-            ctx.drawImage(img, 0, 0, 1, 1);
-            const r = ctx.getImageData(0, 0, 1, 1).data[0];
-            const g = ctx.getImageData(0, 0, 1, 1).data[1];
-            const b = ctx.getImageData(0, 0, 1, 1).data[2];
+            canvas.width = 2; canvas.height = 2;
+            ctx.drawImage(img, 0, 0, 2, 2);
+            const data = ctx.getImageData(0, 0, 2, 2).data;
             
-            const color1 = `rgba(${r + 35}, ${g - 25}, ${b + 45}, 0.85)`;
-            const color2 = `rgba(${r - 25}, ${g + 55}, ${b - 15}, 0.75)`;
-            const color3 = `rgba(${r + 65}, ${g + 35}, ${b - 55}, 0.65)`;
-            const color4 = `rgba(${r - 45}, ${g - 35}, ${b + 65}, 0.85)`;
-
-            document.documentElement.style.setProperty('--bg-color-1', color1);
-            document.documentElement.style.setProperty('--bg-color-2', color2);
-            document.documentElement.style.setProperty('--bg-color-3', color3);
-            document.documentElement.style.setProperty('--bg-color-4', color4);
+            document.documentElement.style.setProperty('--bg-color-1', `rgb(${data[0]}, ${data[1]}, ${data[2]})`);
+            document.documentElement.style.setProperty('--bg-color-2', `rgb(${data[4]}, ${data[5]}, ${data[6]})`);
+            document.documentElement.style.setProperty('--bg-color-3', `rgb(${data[8]}, ${data[9]}, ${data[10]})`);
+            document.documentElement.style.setProperty('--bg-color-4', `rgb(${data[12]}, ${data[13]}, ${data[14]})`);
         };
     }
 
     updateAmbientColors(coverArt.src);
 
-    // KONTROL ANIMASI DRAWER
+    function initDolbyEngine() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            audioSource = audioCtx.createMediaElementSource(audioEngine);
+            pannerNode = audioCtx.createPanner();
+            
+            pannerNode.panningModel = 'HRTF';
+            pannerNode.distanceModel = 'inverse';
+            
+            audioSource.connect(pannerNode);
+            pannerNode.connect(audioCtx.destination);
+        }
+    }
+
+    function runSpatialAudioLoop() {
+        if (!isDolbyActive) return;
+        const time = audioCtx.currentTime * 1.5;
+        if(pannerNode.positionX) {
+            pannerNode.positionX.setValueAtTime(Math.cos(time) * 2, audioCtx.currentTime);
+            pannerNode.positionZ.setValueAtTime(Math.sin(time) * 2, audioCtx.currentTime);
+        } else {
+            pannerNode.setPosition(Math.cos(time) * 2, 0, Math.sin(time) * 2);
+        }
+        spatialLoopId = requestAnimationFrame(runSpatialAudioLoop);
+    }
+
+    dolbyToggleBtn.addEventListener('click', () => {
+        if (!audioEngine.src) return;
+        initDolbyEngine();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        if (!isDolbyActive) {
+            isDolbyActive = true;
+            dolbyToggleBtn.classList.add('active');
+            runSpatialAudioLoop();
+        } else {
+            isDolbyActive = false;
+            dolbyToggleBtn.classList.remove('active');
+            if (spatialLoopId) cancelAnimationFrame(spatialLoopId);
+            if(pannerNode.positionX) {
+                pannerNode.positionX.setValueAtTime(0, audioCtx.currentTime);
+                pannerNode.positionZ.setValueAtTime(0, audioCtx.currentTime);
+            } else {
+                pannerNode.setPosition(0, 0, 0);
+            }
+        }
+    });
+
+    // Menangani pembukaan & penutupan Drawer
     openDrawerBtn.addEventListener('click', () => customizerDrawer.classList.add('active'));
     closeDrawerBtn.addEventListener('click', () => customizerDrawer.classList.remove('active'));
     applyDrawerBtn.addEventListener('click', () => customizerDrawer.classList.remove('active'));
 
-    // Ganti Cover
-    pencilEditBtn.addEventListener('click', () => hiddenImageInput.click());
+    // Menangani edit gambar cover
+    pencilEditBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        hiddenImageInput.click();
+    });
+    
     hiddenImageInput.addEventListener('change', function() {
         const file = this.files[0];
         if (file) {
-            coverArt.src = URL.createObjectURL(file);
-            updateAmbientColors(coverArt.src);
+            const blobUrl = URL.createObjectURL(file);
+            coverArt.src = blobUrl;
+            updateAmbientColors(blobUrl);
         }
     });
 
     inputTitle.addEventListener('input', (e) => displayTitle.textContent = e.target.value || 'Untitled');
     inputArtist.addEventListener('input', (e) => displayArtist.textContent = e.target.value || 'Unknown Artist');
 
-    // Memproses Audio Input
-    inputAudio.addEventListener('change', function() {
+    // Mengamankan jangkauan klik area upload file kustom di HP
+    uploadWrapper.addEventListener('click', () => {
+        inputAudio.click();
+    });
+
+    inputAudio.addEventListener('change', function(e) {
+        e.stopPropagation();
         const file = this.files[0];
         if (file) {
             audioFileNameDisplay.textContent = file.name;
-            
             const reader = new FileReader();
-            reader.onload = function(e) {
-                rawAudioArrayBuffer = e.target.result;
-            };
+            reader.onload = function(evt) { rawAudioArrayBuffer = evt.target.result; };
             reader.readAsArrayBuffer(file);
 
             audioEngine.src = URL.createObjectURL(file);
@@ -733,12 +507,15 @@
         durationTimeText.textContent = "-" + formatTime(audioEngine.duration);
     });
 
-    // Kontrol Play/Pause
     playBtn.addEventListener('click', () => {
-        if (!audioEngine.src) {
-            customizerDrawer.classList.add('active');
-            return;
+        if (!audioEngine.src) { customizerDrawer.classList.add('active'); return; }
+        
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        } else {
+            initDolbyEngine();
         }
+
         if (isPlaying) {
             audioEngine.pause();
             playerMainCard.classList.remove('playing');
@@ -751,13 +528,11 @@
         isPlaying = !isPlaying;
     });
 
-    // FUNGSI BARU: TIMESHIFT -10 DETIK (REWIND)
     rewindBtn.addEventListener('click', () => {
         if (!audioEngine.src) return;
         audioEngine.currentTime = Math.max(0, audioEngine.currentTime - 10);
     });
 
-    // FUNGSI BARU: TIMESHIFT +10 DETIK (FAST FORWARD)
     fastForwardBtn.addEventListener('click', () => {
         if (!audioEngine.src || isNaN(audioEngine.duration)) return;
         audioEngine.currentTime = Math.min(audioEngine.duration, audioEngine.currentTime + 10);
@@ -786,62 +561,31 @@
         volumeFill.style.width = `${vol * 100}%`;
     });
 
-    // POP-UP DROPDOWN MENU TOGGLE
-    moreMenuBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        contextPopupMenu.classList.toggle('show');
-    });
+    moreMenuBtn.addEventListener('click', (e) => { e.stopPropagation(); contextPopupMenu.classList.toggle('show'); });
+    document.addEventListener('click', () => contextPopupMenu.classList.remove('show'));
 
-    document.addEventListener('click', () => {
-        contextPopupMenu.classList.remove('show');
-    });
-
-    // PROSES INJEKSI & DOWNLOAD
     downloadAudioAction.addEventListener('click', async () => {
         contextPopupMenu.classList.remove('show');
-
-        if (!rawAudioArrayBuffer) {
-            customizerDrawer.classList.add('active');
-            alert("Silakan masukkan file audio .mp3 kamu dulu di panel pengaturan ini!");
-            return;
-        }
-
+        if (!rawAudioArrayBuffer) { customizerDrawer.classList.add('active'); alert("Masukkan file audio dulu!"); return; }
         const title = displayTitle.textContent;
         const artist = displayArtist.textContent;
-
         try {
             const imgResponse = await fetch(coverArt.src);
             const imgBlob = await imgResponse.blob();
             const imgArrayBuffer = await imgBlob.arrayBuffer();
-
             const writer = new ID3Writer(rawAudioArrayBuffer);
-            writer.setFrame('TIT2', title)
-                  .setFrame('TPE1', [artist])
-                  .setFrame('APIC', {
-                      type: 3,
-                      data: imgArrayBuffer,
-                      description: 'Cover Art'
-                  });
-            
+            writer.setFrame('TIT2', title).setFrame('TPE1', [artist]).setFrame('APIC', { type: 3, data: imgArrayBuffer, description: 'Cover Art' });
             writer.addTag();
-
             const taggedBlob = writer.getBlob();
             const downloadUrl = URL.createObjectURL(taggedBlob);
-
             const downloadLink = document.createElement('a');
-            downloadLink.href = downloadUrl;
-            downloadLink.download = `${title} - ${artist}.mp3`;
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-            document.body.removeChild(downloadLink);
-            
+            downloadLink.href = downloadUrl; downloadLink.download = `${title} - ${artist}.mp3`;
+            document.body.appendChild(downloadLink); downloadLink.click(); document.body.removeChild(downloadLink);
             URL.revokeObjectURL(downloadUrl);
         } catch (error) {
-            console.error(error);
             const fallbackLink = document.createElement('a');
             const blob = new Blob([rawAudioArrayBuffer]);
-            fallbackLink.href = URL.createObjectURL(blob);
-            fallbackLink.download = `${title} - ${artist}.mp3`;
+            fallbackLink.href = URL.createObjectURL(blob); fallbackLink.download = `${title} - ${artist}.mp3`;
             fallbackLink.click();
         }
     });
